@@ -1,0 +1,342 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="基于星野登录后创作中心、官方创建手册、官网、App Store 与隐私政策的证据化 AI 产品架构拆解">
+  <title>星野｜AI 产品架构逆向分析</title>
+  <style>
+    :root{--bg:#f5f0ed;--paper:#fffdfa;--ink:#211b24;--muted:#746b75;--line:#ded3dc;--deep:#25172d;--brand:#efb837;--fact:#15806e;--infer:#5373b8;--suggest:#bb6721;--unknown:#756a80;--risk:#b84646;--soft:#f1e9ef;--pink:#f9eef5;--blue:#edf3ff;--green:#e8f6f1}
+    *{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.68 Inter,"PingFang SC","Microsoft YaHei",sans-serif}
+    a{color:#6f3d91;text-decoration-thickness:1px;text-underline-offset:3px}a:hover{color:#b55a92}
+    header{background:radial-gradient(circle at 78% 22%,#76507f 0,#46304f 29%,#25172d 72%);color:white;padding:54px max(22px,calc((100vw - 1280px)/2)) 46px;border-bottom:7px solid var(--brand)}
+    header small{font:700 12px/1 ui-monospace,SFMono-Regular,monospace;letter-spacing:.16em;color:#ffe39b}header h1{font-size:clamp(42px,7vw,78px);line-height:1;margin:.2em 0 .14em;letter-spacing:-.05em}header .lead{max-width:1050px;font-size:clamp(17px,2vw,22px);line-height:1.55;margin:0 0 22px;color:#fff8f0}
+    .meta{display:flex;gap:8px;flex-wrap:wrap}.chip{display:inline-block;border:1px solid #ffffff48;border-radius:999px;padding:5px 9px;font-size:12px;background:#ffffff12}
+    nav{position:sticky;top:0;z-index:8;background:#fffaf5ef;backdrop-filter:blur(12px);border-bottom:1px solid var(--line);overflow:auto;white-space:nowrap;padding:10px max(20px,calc((100vw - 1280px)/2))}nav a{display:inline-block;margin-right:18px;color:#3f2947;font-size:12px;font-weight:700;text-decoration:none}
+    main{max-width:1280px;margin:auto;padding:34px 20px 78px}section{margin:0 0 54px;scroll-margin-top:60px}h2{font-size:27px;line-height:1.25;margin:0 0 18px;padding-bottom:10px;border-bottom:2px solid #48354f}h3{font-size:18px;margin:22px 0 10px}h4{margin:0 0 6px;font-size:15px}p{margin:7px 0}.muted{color:var(--muted)}.small{font-size:12px}.mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+    .grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:13px}.grid.two{grid-template-columns:repeat(2,minmax(0,1fr))}.grid.four{grid-template-columns:repeat(4,minmax(0,1fr))}.card{background:var(--paper);border:1px solid var(--line);padding:16px;box-shadow:0 1px 0 #fff inset}.card.accent{border-top:4px solid var(--brand)}.metric{font-size:27px;font-weight:800;line-height:1.1}.eyebrow{font:700 11px/1.2 ui-monospace,monospace;letter-spacing:.08em;color:var(--muted);text-transform:uppercase}
+    .tag{display:inline-block;border-radius:999px;padding:3px 7px;font:700 11px/1.2 ui-monospace,monospace;white-space:nowrap}.fact{color:var(--fact);background:var(--green)}.infer{color:var(--infer);background:var(--blue)}.suggest{color:var(--suggest);background:#fff0df}.unknown{color:var(--unknown);background:#f1edf4}.risk{color:var(--risk);background:#fdeaea}
+    .verdict{background:#fff7dc;border:1px solid #e7cf8d;border-left:6px solid var(--brand);padding:17px 19px;font-size:16px}.verdict strong{font-size:18px}.callout{padding:12px 14px;background:#f2edf4;border-left:4px solid #7d4d87}
+    .scroll{overflow:auto;border:1px solid var(--line);background:white}table{border-collapse:collapse;width:100%;min-width:980px}th,td{border-right:1px solid var(--line);border-bottom:1px solid var(--line);padding:9px;text-align:left;vertical-align:top}th{position:sticky;top:0;background:var(--deep);color:white;font-size:12px}tr:last-child td{border-bottom:0}
+    .flow{display:grid;grid-template-columns:repeat(7,minmax(150px,1fr));gap:9px;overflow:auto;padding:2px}.step{position:relative;background:var(--paper);border:1px solid var(--line);padding:14px;min-height:145px}.step:not(:last-child):after{content:"→";position:absolute;right:-9px;top:46%;z-index:2;background:var(--bg);color:#b27a00;font-weight:900}.step b{display:block;margin-bottom:5px}.step .n{color:#9d6b00;font:800 12px ui-monospace,monospace}
+    .compare{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.role-card{background:white;border:1px solid var(--line);padding:17px;border-top:5px solid var(--fact)}.role-card:nth-child(2){border-top-color:#76508a}.role-card:nth-child(3){border-top-color:var(--brand)}.role-card .big{font-size:23px;font-weight:900}.role-card dl{margin:10px 0 0}.role-card dt{font-weight:800;margin-top:8px}.role-card dd{margin:1px 0 0;color:#504853}
+    .layer{display:grid;grid-template-columns:215px 1fr;background:white;border:1px solid var(--line);margin:8px 0}.layer>strong{background:var(--deep);color:white;padding:14px}.nodes{display:grid;grid-template-columns:repeat(4,minmax(190px,1fr));gap:8px;padding:10px}.node{border:1px solid var(--fact);background:#fbfffd;padding:10px;border-radius:3px;min-height:100px}.node b{display:block}.node small{display:block;color:var(--muted);font:700 10px/1.4 ui-monospace,monospace;margin:3px 0}.node p{font-size:12px;line-height:1.48;margin:5px 0 0}.node.inferred{border-style:dashed;border-color:var(--infer);background:#f7f9ff}.node.suggested{border:2px dotted var(--suggest);background:#fffaf4}.node.unknown-node{border-style:dashed;border-color:var(--unknown);background:#faf8fb}
+    .diagram{background:#fff;border:1px solid var(--line);padding:18px}.diagram-row{display:flex;align-items:stretch;justify-content:center;gap:9px;flex-wrap:wrap}.box{min-width:150px;max-width:230px;flex:1;padding:12px;border:1px solid #76508a;background:#fcf8fd;text-align:center}.box.inferred{border-style:dashed;border-color:var(--infer);background:#f6f9ff}.box.suggested{border:2px dotted var(--suggest);background:#fffaf4}.arrow{align-self:center;font-size:22px;color:#b27a00;font-weight:900}.divider{height:1px;background:var(--line);margin:16px 0}
+    .state{display:flex;gap:7px;align-items:center;overflow:auto;padding:4px 0 10px}.state span{min-width:130px;padding:10px;border:1px solid var(--line);background:white;text-align:center}.state i{font-style:normal;color:#a06d00;font-weight:900}.risk-matrix{display:grid;grid-template-columns:90px 1fr 1fr;gap:1px;background:var(--line);border:1px solid var(--line)}.risk-matrix>*{background:var(--paper);padding:12px}.risk-matrix .head{background:var(--deep);color:white;font-weight:700}.p0{border-left:5px solid #a62921}.p1{border-left:5px solid #d27a2d}.p2{border-left:5px solid #b6a045}
+    ul{margin:7px 0;padding-left:20px}li{margin:4px 0}.source-list{columns:2;column-gap:28px}.source-list li{break-inside:avoid;margin-bottom:8px}footer{max-width:1280px;margin:auto;padding:0 20px 42px;color:var(--muted);font-size:12px}
+    @media(max-width:1050px){.nodes{grid-template-columns:repeat(2,minmax(210px,1fr))}.compare{grid-template-columns:1fr}.grid.four{grid-template-columns:1fr 1fr}}@media(max-width:800px){.grid,.grid.two,.grid.four{grid-template-columns:1fr}.source-list{columns:1}.layer{grid-template-columns:1fr}.layer>strong{padding:10px}.nodes{grid-template-columns:1fr}.risk-matrix{grid-template-columns:70px 1fr}}@media(max-width:640px){header{padding-top:38px}.risk-matrix{grid-template-columns:1fr}.risk-matrix .head:nth-child(2),.risk-matrix .head:nth-child(3){display:none}.flow{grid-template-columns:repeat(7,230px)}h2{font-size:23px}}@media print{nav{display:none}body{background:white}.card,.step,.diagram,.scroll,.layer{break-inside:avoid}}
+  </style>
+</head>
+<body>
+  <header>
+    <small>AI PRODUCT REVERSE ANALYSIS · 2026-08-19</small>
+    <h1>星野</h1>
+    <p class="lead">星野不是单纯的 AI 聊天工具，而是“智能体创作工具 + 多模态互动体验 + 用户生成内容社区”。创作者把人设、模型类型、技能、形象和声音组装成可发布的智能体；普通用户通过推荐、对话、语音和图片与它建立持续关系。</p>
+    <div class="meta"><span class="chip">登录后 Web 创作中心</span><span class="chip">官方创建手册</span><span class="chip">官网 / App Store / 隐私政策</span><span class="chip">只读拆解</span><span class="chip">未创建 / 未发布 / 未付费</span><span class="chip">风险：高（情感陪伴 + UGC + 个人数据）</span></div>
+  </header>
+  <nav><a href="#summary">结论</a><a href="#scope">证据</a><a href="#value">用户与价值</a><a href="#map">功能地图</a><a href="#journey">用户旅程</a><a href="#contract">能力契约</a><a href="#agent">Agent</a><a href="#models">模型与技能</a><a href="#context">上下文与数据</a><a href="#architecture">分层架构</a><a href="#state">状态与实体</a><a href="#governance">安全</a><a href="#business">商业化</a><a href="#tobe">As-Is / To-Be</a><a href="#glossary">术语表</a><a href="#trace">证据追溯</a></nav>
+  <main>
+    <section id="summary">
+      <h2>01｜执行摘要</h2>
+      <div class="verdict"><strong>核心判断：</strong>星野的核心产品对象是可长期运营的 <b>AI 智能体</b>，不是某一轮回复。一个智能体把隐藏的人设规则、公开简介、开场白、模型类型、技能、形象、声音和发布状态绑定在一起；用户每次对话都在消费这个配置形成的综合体验。 <span class="tag fact">E01–E12</span></div>
+      <div class="grid four" style="margin-top:13px">
+        <div class="card accent"><div class="eyebrow">用户侧价值</div><p class="metric">关系与剧情</p><p>用户选择感兴趣的角色，通过文本、语音和图片互动，获得陪伴、角色扮演、故事推进或工具帮助。</p></div>
+        <div class="card accent"><div class="eyebrow">创作者侧价值</div><p class="metric">低门槛造角色</p><p>用表单和自然语言配置人设、模型、技能、形象与声音，并在发布前实时调试。</p></div>
+        <div class="card accent"><div class="eyebrow">平台侧飞轮</div><p class="metric">创作—分发—互动</p><p>创作者提供智能体供给，推荐与社区带来消费，互动和反馈继续反哺内容与模型体验。</p></div>
+        <div class="card accent"><div class="eyebrow">最大风险</div><p class="metric">信任错位</p><p>拟人化角色可能被当作真实关系或专业人士；错误记忆、越界建议、肖像声音侵权和审核误判都会放大伤害。</p></div>
+      </div>
+      <div class="grid" style="margin-top:13px">
+        <div class="card"><span class="tag fact">双边产品</span><h4>普通用户消费智能体</h4><p>官网和 App Store 都把产品描述为智能体内容社区，强调推荐、互动、陪伴和共同成长。</p></div>
+        <div class="card"><span class="tag fact">创作工作台</span><h4>创作者生产智能体</h4><p>Web 创作中心提供草稿管理、设定、模型选择、技能、形象、声音、调试和发布入口。</p></div>
+        <div class="card"><span class="tag infer">平台运营</span><h4>审核和推荐决定供需连接</h4><p>发布需要审核，用户侧存在个性化推荐；具体排序算法、曝光规则和创作者分成均未公开。</p></div>
+      </div>
+    </section>
+
+    <section id="scope">
+      <h2>02｜查看范围、证据与缺口</h2>
+      <div class="grid two">
+        <div class="card"><h4>本轮已查看</h4><ul><li>登录后 Web 创作中心：智能体列表、形象素材、星野 FM。</li><li>官方示例编辑页：设定、公开简介、开场白、技能、形象、声音和发布状态。</li><li>技能弹窗：绘画已开放，唱歌与搜索显示“即将上线”。</li><li>官方创建手册：模型选择、调试台、形象生成、素材、审核与常见问题。</li><li>官网、Apple App Store、2026-08-13 生效的隐私政策。</li></ul></div>
+        <div class="card"><h4>仍未确认</h4><ul><li>未在移动 App 中实际完成“发现—连接—聊天—付费”流程。</li><li>未提交新智能体，未验证审核时长、驳回理由和发布后的运营数据。</li><li>未触发绘画、语音、FM 或付费，因此质量、延迟、扣费和失败补偿未知。</li><li>对话模型、工具模型和生图模型的具体供应商、版本、上下文长度与成本未知。</li><li>长期记忆写入规则、可编辑性、过期机制和跨智能体隔离方式未知。</li><li>推荐、审核、风控和创作者激励的内部算法与指标未知。</li></ul></div>
+      </div>
+      <p class="muted"><span class="tag fact">【已确认】</span> 页面或官方资料直接支持；<span class="tag infer">【合理推断】</span> 多条事实支持但内部实现不可见；<span class="tag suggest">【建议设计】</span> 针对已发现问题提出的改进；<span class="tag unknown">【未知】</span> 当前证据不足。</p>
+      <p class="callout"><b>隐私处理：</b>登录后页面中出现的用户私有草稿名称、内容和账号信息不进入报告。报告只使用页面结构、官方示例字段和公开资料。</p>
+    </section>
+
+    <section id="value">
+      <h2>03｜用户、场景与价值</h2>
+      <div class="compare">
+        <div class="role-card"><div class="eyebrow">CONSUMER</div><div class="big">互动用户</div><dl><dt>场景</dt><dd>情感陪伴、角色扮演、开放剧情、闲聊、学习或工具问答。</dd><dt>替代方式</dt><dd>真人社交、小说/游戏、通用聊天 AI、角色扮演社区。</dd><dt>得到的价值</dt><dd>随时可进入的个性化角色关系，带声音、形象和可持续剧情。</dd><dt>失败代价</dt><dd>角色崩坏、遗忘、重复回复、越界建议或把 AI 当成真实专业关系。</dd></dl></div>
+        <div class="role-card"><div class="eyebrow">CREATOR</div><div class="big">智能体创作者</div><dl><dt>场景</dt><dd>创作原创角色、同人角色、互动故事、模拟器或工具型助手。</dd><dt>替代方式</dt><dd>写小说、做聊天机器人、Prompt 调试、生图与配音工具拼接。</dd><dt>得到的价值</dt><dd>不用开发代码，也能配置角色并发布到现成社区分发。</dd><dt>失败代价</dt><dd>设定不生效、审核不通过、素材丢失、跨端草稿断裂或侵权。</dd></dl></div>
+        <div class="role-card"><div class="eyebrow">PLATFORM</div><div class="big">平台运营与审核</div><dl><dt>场景</dt><dd>组织内容供给、推荐分发、治理 UGC、处理举报和运营付费权益。</dd><dt>核心目标</dt><dd>提高优质智能体供给、互动深度、留存和付费，同时控制内容风险。</dd><dt>关键矛盾</dt><dd>沉浸和开放需要自由度，安全合规又要求限制与审核。</dd><dt>未知</dt><dd>审核 SLA、申诉机制、创作者激励和分成规则未在本轮证据中出现。</dd></dl></div>
+      </div>
+      <h3>价值主张</h3>
+      <div class="verdict">让普通人把脑海中的角色，组装成一个“会说话、有形象、有声音、能使用技能”的 AI 智能体，并在社区里被其他用户发现、互动和持续消费。</div>
+    </section>
+
+    <section id="map">
+      <h2>04｜功能地图与核心对象</h2>
+      <div class="grid four">
+        <div class="card"><span class="tag fact">创作</span><h4>智能体设定</h4><p>配置昵称、性别、隐藏的人设与回复逻辑、公开简介和开场白。</p></div>
+        <div class="card"><span class="tag fact">模型</span><h4>对话 / 工具模型</h4><p>对话模型偏角色语气和剧情；工具模型偏规则遵循、逻辑与准确性。</p></div>
+        <div class="card"><span class="tag fact">技能</span><h4>绘画扩展</h4><p>智能体按用户请求或预设场景生成图片；唱歌和搜索在页面显示尚未开放。</p></div>
+        <div class="card"><span class="tag fact">调试</span><h4>实时预览</h4><p>创作者边改设定边测试文字回复和语音效果，再决定是否发布。</p></div>
+        <div class="card"><span class="tag fact">形象</span><h4>生成、上传与重绘</h4><p>支持风格参考、脸部参考、文字描述、三类生图模型和局部重绘。</p></div>
+        <div class="card"><span class="tag fact">声音</span><h4>官方 / 个人素材库</h4><p>为智能体选择与角色匹配的声音；网页手册称素材库可与 App 互通。</p></div>
+        <div class="card"><span class="tag fact">发布</span><h4>草稿、审核与上线</h4><p>智能体可存草稿或提交发布；平台审核通过后才进入用户侧内容供给。</p></div>
+        <div class="card"><span class="tag fact">社区</span><h4>推荐、连接与互动</h4><p>移动端承载智能体发现、关系建立、多模态聊天、UGC 展示和商业化。</p></div>
+      </div>
+      <h3>三个不能混淆的对象</h3>
+      <div class="diagram"><div class="diagram-row"><div class="box"><b>智能体设定</b><br><small>决定“是谁、怎么说、遵守什么规则”</small></div><span class="arrow">+</span><div class="box"><b>媒体与技能配置</b><br><small>决定“长什么样、什么声音、还能做什么”</small></div><span class="arrow">→</span><div class="box"><b>发布版本</b><br><small>通过审核后供用户连接和互动</small></div><span class="arrow">→</span><div class="box"><b>用户会话</b><br><small>某个用户与该版本产生的消息和关系状态</small></div></div></div>
+    </section>
+
+    <section id="journey">
+      <h2>05｜端到端用户旅程</h2>
+      <h3>普通用户：从发现到持续互动</h3>
+      <div class="flow">
+        <div class="step"><span class="n">01 DISCOVER</span><b>发现角色</b><p>从推荐或社区内容中遇到感兴趣的智能体。</p><span class="tag fact">O03</span></div>
+        <div class="step"><span class="n">02 CONNECT</span><b>建立连接</b><p>平台可能通过预设问题了解偏好，并推荐专属智能体。</p><span class="tag fact">O04</span></div>
+        <div class="step"><span class="n">03 OPEN</span><b>进入角色场景</b><p>公开简介、形象、声音和开场白共同建立第一印象。</p><span class="tag fact">S03 O02</span></div>
+        <div class="step"><span class="n">04 CHAT</span><b>多模态互动</b><p>输入文本，按功能使用语音或图片；模型结合上下文生成回复。</p><span class="tag fact">O03 O04</span></div>
+        <div class="step"><span class="n">05 ACT</span><b>触发技能或剧情</b><p>角色继续剧情、按规则运行模拟器，或在条件满足时生成图片。</p><span class="tag fact">O02</span></div>
+        <div class="step"><span class="n">06 FEEDBACK</span><b>反馈与调整</b><p>点赞、举报、重新输入等反馈用于改善体验和治理内容。</p><span class="tag fact">O04</span></div>
+        <div class="step"><span class="n">07 RETURN</span><b>关系与留存</b><p>持续互动、成就、个性化推荐和付费权益推动再次使用。</p><span class="tag fact">O03 O04</span></div>
+      </div>
+      <h3>创作者：从设定到发布</h3>
+      <div class="flow">
+        <div class="step"><span class="n">01 DRAFT</span><b>创建草稿</b><p>进入 Web 创作中心，建立一个新的智能体对象。</p></div>
+        <div class="step"><span class="n">02 PERSONA</span><b>写角色与规则</b><p>分别填写隐藏设定、公开简介、开场白和必要的示例对话。</p></div>
+        <div class="step"><span class="n">03 MODEL</span><b>选择模型类型</b><p>角色剧情偏对话模型；规则、模拟和工具问答偏工具模型。</p></div>
+        <div class="step"><span class="n">04 ASSET</span><b>配置形象和声音</b><p>上传、生成或从素材库选择，并为角色绑定声音。</p></div>
+        <div class="step"><span class="n">05 SKILL</span><b>添加技能</b><p>按场景启用绘画并设置画风、尺寸和触发条件。</p></div>
+        <div class="step"><span class="n">06 DEBUG</span><b>预览和调试</b><p>实时测试回复、语音和技能效果，反复修改配置。</p></div>
+        <div class="step"><span class="n">07 REVIEW</span><b>提交审核</b><p>保存草稿或发布；审核通过后进入社区，驳回则修改后重提。</p></div>
+      </div>
+      <p class="muted">网页端与 App 端的智能体草稿当前不互通；形象与声音素材库可互通。素材被草稿或智能体使用后，会从素材库列表中移除。 <span class="tag fact">O02</span></p>
+    </section>
+
+    <section id="contract">
+      <h2>06｜核心 AI 能力契约</h2>
+      <div class="scroll"><table><thead><tr><th>能力</th><th>解决的问题</th><th>输入</th><th>输出</th><th>用户控制</th><th>完成判断</th><th>失败与边界</th></tr></thead><tbody>
+        <tr><td>角色化对话</td><td>让回复持续符合角色身份、关系、语气和剧情。</td><td>智能体设定、开场白、会话消息和用户信息。</td><td>角色化文本，可能带动作、情绪或剧情推进。</td><td>创作者改设定；用户重输、反馈或退出。</td><td>回复与设定一致，能接住当前上下文，并给用户继续互动的空间。</td><td>可能角色崩坏、遗忘、重复、编造或过度拟人化。</td></tr>
+        <tr><td>规则 / 工具型对话</td><td>让模拟器、测试或知识问答更按规则执行。</td><td>规则、步骤、用户选择和当前进度。</td><td>结构化答复、计算过程、选项或模拟状态。</td><td>创作者选择工具模型并写明规则。</td><td>规则未被跳过，结果可检查，状态能继续推进。</td><td>工具模型不等于真实外部工具；具体知识来源和准确率未知。</td></tr>
+        <tr><td>聊天中绘画</td><td>把用户请求或剧情场景转成图片。</td><td>当前对话、场景设定、画风和尺寸。</td><td>一张生成图片。</td><td>创作者开关技能并配置；用户发起请求。</td><td>图片成功出现且与场景、角色和安全规则一致。</td><td>平均耗时页面标注约 8 秒；版本门槛、失败扣费和一致性未知。</td></tr>
+        <tr><td>角色形象生成</td><td>降低角色立绘和背景素材制作门槛。</td><td>文字描述、风格参考、脸部参考、提示词强度和模型类型。</td><td>候选形象，可收藏、直接使用或局部重绘。</td><td>创作者调参数、选图、收藏或重绘。</td><td>素材被收藏或绑定到智能体，并满足肖像与内容规则。</td><td>未收藏图片退出后不保存；局部重绘不适合大范围变更。</td></tr>
+        <tr><td>语音呈现</td><td>让角色以匹配的声音播放对话。</td><td>角色声音配置和生成文本。</td><td>可播放语音。</td><td>创作者选官方或个人素材；用户播放或语音交互。</td><td>音色、语速、情绪与文本和角色匹配。</td><td>模型、克隆方式、延迟与情绪稳定性未公开；涉及声音权利。</td></tr>
+        <tr><td>个性化推荐</td><td>把用户更可能喜欢的智能体和内容排到前面。</td><td>对话与搜索文本、点击、浏览、分享、设备及合作方合法信息。</td><td>个性化智能体、内容和商业信息。</td><td>隐私政策称可在设置中关闭个性化推荐。</td><td>提升发现效率，同时不让用户被单一内容困住。</td><td>排序目标、过滤逻辑、公平性和未成年人策略未知。</td></tr>
+      </tbody></table></div>
+    </section>
+
+    <section id="agent">
+      <h2>07｜Agent 与运行工作流</h2>
+      <div class="verdict"><b>形态判断：</b>页面明确存在“智能体”，但没有证据显示一次对话由多个智能体协同完成。当前更接近“单个角色智能体 + 模型类型 + 可选技能 + 平台审核/推荐服务”。</div>
+      <div class="diagram" style="margin-top:13px">
+        <div class="diagram-row"><div class="box"><b>用户输入</b><br><small>文本 / 语音 / 图片 / 操作选择</small></div><span class="arrow">→</span><div class="box"><b>智能体运行组件</b><br><small>读取人设、关系、会话与能力配置</small></div><span class="arrow">→</span><div class="box inferred"><b>模型选择与提示组装</b><br><small>具体内部实现未公开</small></div><span class="arrow">→</span><div class="box"><b>对话模型或工具模型</b><br><small>生成角色回复或规则型输出</small></div></div>
+        <div class="divider"></div>
+        <div class="diagram-row"><div class="box"><b>可选绘画技能</b><br><small>按用户请求或预设场景生成图片</small></div><span class="arrow">→</span><div class="box"><b>文本 / 语音 / 图片结果</b><br><small>进入会话界面供用户继续互动</small></div><span class="arrow">→</span><div class="box inferred"><b>会话与关系状态</b><br><small>记录消息、反馈和可能的关系进展</small></div><span class="arrow">→</span><div class="box"><b>反馈与安全处理</b><br><small>点赞、重输、举报、内容审核</small></div></div>
+      </div>
+      <div class="grid two" style="margin-top:13px">
+        <div class="card"><h4>智能体运行输入</h4><ul><li>智能体发布版本：隐藏设定、公开简介、开场白。</li><li>模型类型：对话模型或工具模型。</li><li>媒体配置：形象、背景和声音。</li><li>技能配置：是否开启绘画、画风、尺寸和触发场景。</li><li>会话输入：当前消息和可用的历史上下文。</li><li>用户上下文：昵称、偏好、反馈及平台允许使用的信息。</li></ul></div>
+        <div class="card"><h4>完成与异常</h4><ul><li>完成不是“模型返回了文字”，而是回复符合角色/规则，媒体可播放，技能结果真实出现。</li><li>敏感内容需要拦截或降级，专业建议需要清楚说明非真人专业服务。</li><li>技能失败应返回明确状态，不应假装图片已经生成。</li><li>对话重复、角色崩坏或记忆冲突需要提供重试、回退或纠错入口。</li><li>页面未显示任务队列、工具调用记录、重试和成本明细，保持未知。</li></ul></div>
+      </div>
+    </section>
+
+    <section id="models">
+      <h2>08｜模型、技能与媒体资产</h2>
+      <div class="scroll"><table><thead><tr><th>能力层</th><th>页面名称</th><th>适用场景</th><th>创作者可控项</th><th>已确认</th><th>仍未知</th></tr></thead><tbody>
+        <tr><td>语言模型</td><td>对话模型</td><td>角色扮演、剧情、闲聊、情感陪伴和玩梗。</td><td>人设、关系、故事、语气、开场白与示例对话。</td><td>官方手册强调自然、流畅和更贴近角色。</td><td>模型名称、版本、上下文长度、记忆和回退规则。</td></tr>
+        <tr><td>语言模型</td><td>工具模型</td><td>模拟器、规则任务、学习助手和逻辑性问答。</td><td>规则、步骤、条件、输出格式和处理场景。</td><td>官方手册强调规则保持、逻辑和准确性。</td><td>是否具备真实工具调用、联网知识和结构化输出保证。</td></tr>
+        <tr><td>聊天技能</td><td>绘画</td><td>按请求或剧情场景在对话中生成图片。</td><td>开关、特殊触发场景、画风和尺寸。</td><td>页面显示平均耗时约 8 秒，需指定版本以上体验。</td><td>底层模型、计费、并发、失败补偿和角色一致性。</td></tr>
+        <tr><td>聊天技能</td><td>唱歌 / 搜索</td><td>唱歌语音；搜索并整理最新网络信息。</td><td>当前页面不可用。</td><td>技能弹窗显示“即将上线”。</td><td>上线时间、权限、引用、计费和安全边界。</td></tr>
+        <tr><td>图像模型</td><td>通用 / 动漫 / 真人</td><td>角色、场景、二次元或写实形象生成。</td><td>风格参考、脸部参考、参考强度、提示词强度和文字描述。</td><td>支持生成候选、收藏、直接使用与局部重绘。</td><td>供应商、分辨率、版权数据来源、成本与水印策略。</td></tr>
+        <tr><td>声音能力</td><td>官方素材库 / 我的素材库</td><td>为角色绑定声音并在调试或对话中播放。</td><td>从素材库选择声音。</td><td>创作中心与 App 素材库互通。</td><td>TTS 或克隆模型、授权证据、情绪控制和删除传播机制。</td></tr>
+      </tbody></table></div>
+      <p class="callout"><b>关键边界：</b>“工具模型”是星野页面里的模型类型名称，不能直接等同于浏览器、搜索、支付等真实外部工具。当前只确认绘画技能会生成外部图片结果。</p>
+    </section>
+
+    <section id="context">
+      <h2>09｜上下文、记忆、知识与数据</h2>
+      <div class="scroll"><table><thead><tr><th>上下文对象</th><th>包含什么</th><th>谁产生</th><th>谁使用</th><th>作用范围</th><th>风险与证据边界</th></tr></thead><tbody>
+        <tr><td>Identity Context<br>用户身份</td><td>账号、UID、昵称、年龄区间、权限和付费状态。</td><td>注册、登录、实名与支付系统。</td><td>推荐、会话、未成年人模式、计费和安全。</td><td>账号级。</td><td>隐私政策列明手机、实名和设备信息；最小化与保留期限需持续核对。</td></tr>
+        <tr><td>Agent Definition<br>智能体定义</td><td>昵称、性别、隐藏设定、公开简介、开场白、模型和技能配置。</td><td>创作者。</td><td>智能体运行组件、审核和公开详情页。</td><td>智能体版本级。</td><td>公开简介不再影响回复，只有隐藏设定决定对话效果。</td></tr>
+        <tr><td>Conversation Context<br>会话上下文</td><td>当前输入、历史消息、模型输出和技能结果。</td><td>用户、模型与技能。</td><td>后续回复、反馈、安全和质量改进。</td><td>会话或连接级。</td><td>隐私政策称输入会用于上下文生成并可能用于模型训练；具体截断和删除策略未知。</td></tr>
+        <tr><td>Preference Context<br>偏好与推荐</td><td>对话/搜索文本、点击、浏览、分享及设备信号。</td><td>用户行为和平台。</td><td>个性化推荐和商业信息展示。</td><td>账号与跨会话。</td><td>用户可关闭个性化推荐；算法、画像字段和过期机制未知。</td></tr>
+        <tr><td>Relationship / Memory<br>关系与记忆</td><td>关系进展、成就、可能的角色记忆和公开“记忆薄”。</td><td>持续互动和用户创作。</td><td>留存、个性化与角色体验。</td><td>用户—智能体关系。</td><td>产品宣称“越交互越懂你”，但长期记忆写入、编辑、删除和跨角色隔离未确认。</td></tr>
+        <tr><td>Media Asset<br>媒体资产</td><td>形象、背景、参考图、重绘版本、声音和 FM。</td><td>创作者、生成模型或素材库。</td><td>智能体展示、对话和发布。</td><td>素材库 / 智能体版本。</td><td>素材使用后从素材库列表删除；原文件、引用关系和恢复机制未知。</td></tr>
+        <tr><td>Safety / Feedback<br>安全与反馈</td><td>举报、重输、审核结果、敏感内容与安全事件。</td><td>用户、审核服务和平台。</td><td>内容治理、申诉、质量改进和模型训练。</td><td>消息、作品、账号与模型版本。</td><td>审核供应商、误判率、申诉时限和策略版本未公开。</td></tr>
+        <tr><td>Billing Context<br>付费上下文</td><td>商品、金额、订单、支付方式、流水和状态。</td><td>用户、星野和支付服务。</td><td>权益发放、客服、对账与风控。</td><td>账号 / 订单。</td><td>App Store 确认月卡、钻石等内购；各权益消耗规则未完整验证。</td></tr>
+      </tbody></table></div>
+    </section>
+
+    <section id="architecture">
+      <h2>10｜产品十层架构（As-Is）</h2>
+      <div class="layer"><strong>1 用户与渠道<br><span class="small">USERS &amp; CHANNELS</span></strong><div class="nodes">
+        <div class="node"><b>移动端互动用户</b><small>MOBILE CONSUMER</small><p>发现智能体，建立连接，进行文本、语音和图片互动，并消费付费权益。</p></div>
+        <div class="node"><b>Web 创作者</b><small>WEB CREATOR</small><p>创建和管理智能体、形象素材与 FM，在发布前完成配置和调试。</p></div>
+        <div class="node"><b>UGC 创作者社区</b><small>CREATOR COMMUNITY</small><p>持续提供原创角色、同人角色、剧情、模拟器和工具型智能体。</p></div>
+        <div class="node inferred"><b>审核与运营人员</b><small>MODERATOR / OPERATOR</small><p>处理发布审核、举报、内容治理、活动和商业化运营；后台页面未查看。</p></div>
+      </div></div>
+      <div class="layer"><strong>2 交互与体验<br><span class="small">INTERACTION &amp; EXPERIENCE</span></strong><div class="nodes">
+        <div class="node"><b>推荐与角色发现</b><small>DISCOVERY / RECOMMENDATION</small><p>把用户更可能喜欢的智能体、作品和商业内容呈现在首页与社区。</p></div>
+        <div class="node"><b>沉浸式多模态对话</b><small>TEXT / VOICE / IMAGE CHAT</small><p>用角色形象、背景、语音、文本和生成图片共同维持互动氛围。</p></div>
+        <div class="node"><b>智能体配置表单</b><small>AGENT CREATION FORM</small><p>把人设、公开信息、开场白、模型、技能、形象和声音分开配置。</p></div>
+        <div class="node"><b>预览与调试台</b><small>PREVIEW / DEBUG CONSOLE</small><p>在发布前测试回复与语音，判断设定是否生效并即时调整。</p></div>
+      </div></div>
+      <div class="layer"><strong>3 产品应用域<br><span class="small">PRODUCT DOMAINS</span></strong><div class="nodes">
+        <div class="node"><b>角色陪伴与开放剧情</b><small>COMPANIONSHIP / ROLEPLAY</small><p>承载闲聊、情绪陪伴、角色关系、互动故事和剧情选择。</p></div>
+        <div class="node"><b>模拟器与工具型角色</b><small>SIMULATOR / UTILITY AGENT</small><p>按明确规则提供测试、学习、计算、游戏进程或任务帮助。</p></div>
+        <div class="node"><b>智能体创作与管理</b><small>AGENT CREATION / MANAGEMENT</small><p>管理草稿、发布状态、角色配置、模型、技能和媒体资产。</p></div>
+        <div class="node"><b>形象素材与星野 FM</b><small>IMAGE LIBRARY / XINGYE FM</small><p>生产和管理角色视觉素材、声音相关内容与 FM 作品。</p></div>
+      </div></div>
+      <div class="layer"><strong>4 Agent 与流程编排<br><span class="small">AGENT &amp; WORKFLOW</span></strong><div class="nodes">
+        <div class="node"><b>角色智能体运行</b><small>ROLE AGENT RUNTIME</small><p>把智能体设定、会话上下文和用户输入组合成一次回复。</p></div>
+        <div class="node inferred"><b>模型与提示组装</b><small>MODEL / PROMPT ASSEMBLY</small><p>根据发布配置选择对话或工具模型，并拼装当前上下文；内部名称未知。</p></div>
+        <div class="node"><b>技能触发</b><small>SKILL TRIGGER</small><p>识别用户的绘画请求或创作者预设场景，调用图像生成能力。</p></div>
+        <div class="node inferred"><b>发布审核流程</b><small>PUBLISH REVIEW PIPELINE</small><p>接收发布版本并完成内容检查，通过后上线，驳回后返回修改。</p></div>
+      </div></div>
+      <div class="layer"><strong>5 工具与外部服务<br><span class="small">TOOLS &amp; EXTERNAL SERVICES</span></strong><div class="nodes">
+        <div class="node"><b>图像生成与局部重绘</b><small>IMAGE GENERATION / INPAINTING</small><p>根据描述和参考图生成角色形象或对局部区域进行修改。</p></div>
+        <div class="node"><b>语音合成与播放</b><small>VOICE SYNTHESIS / PLAYBACK</small><p>把模型文本转成所选角色声音，并在调试台和对话中播放。</p></div>
+        <div class="node inferred"><b>内容审核服务</b><small>CONTENT MODERATION</small><p>检查用户输入、生成结果和发布作品；隐私政策称可能使用第三方审核商。</p></div>
+        <div class="node"><b>支付、推送与登录服务</b><small>PAYMENT / PUSH / LOGIN</small><p>完成账号、通知、订阅、钻石充值和订单状态处理。</p></div>
+      </div></div>
+      <div class="layer"><strong>6 模型接入与选择<br><span class="small">MODEL ACCESS &amp; SELECTION</span></strong><div class="nodes">
+        <div class="node"><b>对话模型</b><small>DIALOGUE MODEL</small><p>强调自然语气、角色性格、情绪互动和开放剧情的生成效果。</p></div>
+        <div class="node"><b>工具模型</b><small>TOOL-ORIENTED MODEL</small><p>强调规则遵循、逻辑过程、模拟进度和相对准确的答案。</p></div>
+        <div class="node"><b>通用 / 动漫 / 真人生图</b><small>GENERAL / ANIME / REALISTIC IMAGE</small><p>覆盖不同角色与场景风格，并接受参考图和提示词参数。</p></div>
+        <div class="node unknown-node"><b>声音与推荐模型</b><small>VOICE / RANKING MODEL</small><p>产品行为说明存在声音生成和个性化排序，但具体模型与路由未公开。</p></div>
+      </div></div>
+      <div class="layer"><strong>7 上下文、记忆与运行数据<br><span class="small">CONTEXT, MEMORY &amp; DATA</span></strong><div class="nodes">
+        <div class="node"><b>身份、年龄与权益</b><small>IDENTITY / AGE / ENTITLEMENT</small><p>决定账号能力、未成年人模式、可用额度和付费权益。</p></div>
+        <div class="node"><b>智能体发布版本</b><small>AGENT VERSION CONTEXT</small><p>保存本次上线的人设、公开信息、模型、技能、形象和声音配置。</p></div>
+        <div class="node"><b>会话与用户反馈</b><small>CONVERSATION / FEEDBACK</small><p>保存当前输入、历史消息、回复、重输、点赞和举报等交互记录。</p></div>
+        <div class="node inferred"><b>关系、成就与偏好</b><small>RELATIONSHIP / PREFERENCE</small><p>支持持续互动和个性化推荐；长期记忆的具体结构与治理尚未确认。</p></div>
+      </div></div>
+      <div class="layer"><strong>8 知识、内容与媒体资产<br><span class="small">CONTENT &amp; MEDIA ASSETS</span></strong><div class="nodes">
+        <div class="node"><b>人设与示例对话</b><small>PERSONA / DIALOGUE EXAMPLE</small><p>告诉模型角色身份、性格、关系、背景、语言风格和应对方式。</p></div>
+        <div class="node"><b>形象与重绘版本</b><small>IMAGE ASSET / VERSION</small><p>保存收藏的角色图、参考图、生成结果和局部修改后的版本。</p></div>
+        <div class="node"><b>声音素材</b><small>VOICE ASSET</small><p>官方素材和用户自己的声音素材可绑定到智能体。</p></div>
+        <div class="node"><b>社区作品与 FM</b><small>UGC / FM CONTENT</small><p>公开智能体、故事、群聊、记忆薄、动态和 FM 共同构成内容供给。</p></div>
+      </div></div>
+      <div class="layer"><strong>9 评测、安全与人工治理<br><span class="small">EVALUATION &amp; GOVERNANCE</span></strong><div class="nodes">
+        <div class="node"><b>创作者调试验收</b><small>CREATOR QA</small><p>用预览台检查角色回复、规则保持、语音和技能触发是否符合预期。</p></div>
+        <div class="node"><b>发布审核与举报</b><small>PUBLISH REVIEW / REPORT</small><p>在内容进入社区前后分别通过审核和用户举报控制风险。</p></div>
+        <div class="node"><b>隐私与未成年人保护</b><small>PRIVACY / MINOR PROTECTION</small><p>覆盖实名、权限、个性化推荐开关、个人信息管理和未成年人模式。</p></div>
+        <div class="node unknown-node"><b>系统化质量评测</b><small>OFFLINE / ONLINE EVALUATION</small><p>角色一致性、记忆准确、伤害风险和技能成功率的内部评测未公开。</p></div>
+      </div></div>
+      <div class="layer"><strong>10 基础设施、运营与计费<br><span class="small">INFRASTRUCTURE &amp; OPERATIONS</span></strong><div class="nodes">
+        <div class="node"><b>账号、UID 与设备安全</b><small>ACCOUNT / UID / DEVICE SECURITY</small><p>支持注册登录、风险识别、设备信息处理和账号安全。</p></div>
+        <div class="node inferred"><b>存储、版本与推理服务</b><small>STORAGE / VERSION / INFERENCE</small><p>保存草稿、发布版本、会话和媒体，并承载模型与技能运行；实现未公开。</p></div>
+        <div class="node"><b>订阅、钻石与订单</b><small>SUBSCRIPTION / DIAMOND / ORDER</small><p>处理月卡、虚拟货币、礼包、订单和权益发放。</p></div>
+        <div class="node inferred"><b>推荐、实验与内容运营</b><small>RECOMMENDATION / EXPERIMENT / OPS</small><p>调节供给分发、活动和商业信息，具体指标和实验平台未知。</p></div>
+      </div></div>
+      <p class="muted">绿色实线为页面或官方资料已确认；蓝色虚线为多条事实支持的合理推断；灰紫虚线为当前未知。没有把具体数据库、云服务、模型供应商、多 Agent 数量和推荐算法写成事实。</p>
+    </section>
+
+    <section id="state">
+      <h2>11｜状态机与核心数据实体</h2>
+      <h3>智能体发布状态</h3>
+      <div class="state"><span>新建<br><small>建立对象</small></span><i>→</i><span>草稿<br><small>配置设定与素材</small></span><i>⇄</i><span>调试<br><small>测试回复和技能</small></span><i>→</i><span>提交审核<br><small>冻结待审版本</small></span><i>→</i><span>审核中</span><i>→</i><span>已发布<br><small>进入用户侧</small></span><i>或</i><span>驳回<br><small>修改后重提</small></span></div>
+      <p class="callout"><b>版本要求：</b>用户实际聊天应绑定一个明确的已发布版本。创作者修改草稿不应立即改变进行中的用户会话；重新发布后需要说明哪些配置和素材发生变化。页面尚未展示这套版本规则。</p>
+      <h3>核心数据实体</h3>
+      <div class="diagram">
+        <div class="diagram-row"><div class="box">User / Creator<br><small>用户 / 创作者</small></div><span class="arrow">1:N</span><div class="box">Agent<br><small>智能体</small></div><span class="arrow">1:N</span><div class="box">AgentVersion<br><small>草稿 / 发布版本</small></div><span class="arrow">绑定</span><div class="box">Persona / Model / Skill<br><small>人设 / 模型 / 技能</small></div></div>
+        <div class="divider"></div>
+        <div class="diagram-row"><div class="box">AgentVersion</div><span class="arrow">引用</span><div class="box">Image / Voice Asset<br><small>形象 / 声音素材</small></div><span class="arrow">审核</span><div class="box">PublishReview<br><small>发布审核</small></div><span class="arrow">上线</span><div class="box">Community Item<br><small>社区内容</small></div></div>
+        <div class="divider"></div>
+        <div class="diagram-row"><div class="box">User</div><span class="arrow">N:M</span><div class="box">Agent</div><span class="arrow">产生</span><div class="box">Session / Message<br><small>会话 / 消息</small></div><span class="arrow">沉淀</span><div class="box inferred">Relationship / Memory<br><small>关系 / 记忆</small></div></div>
+        <div class="divider"></div>
+        <div class="diagram-row"><div class="box">Message</div><span class="arrow">触发</span><div class="box">ModelCall / SkillCall<br><small>模型 / 技能调用</small></div><span class="arrow">产生</span><div class="box">Text / Voice / Image<br><small>文本 / 语音 / 图片</small></div><span class="arrow">记录</span><div class="box">Feedback / SafetyEvent<br><small>反馈 / 安全事件</small></div></div>
+      </div>
+    </section>
+
+    <section id="governance">
+      <h2>12｜评测、安全、隐私与责任</h2>
+      <div class="risk-matrix">
+        <div class="head">等级</div><div class="head">主要风险</div><div class="head">治理要求</div>
+        <div class="p0"><b>P0</b></div><div><b>情感或专业角色越界</b><br>心理、医疗、法律、未成年人或自伤等场景中，拟人化角色可能让用户把生成内容当作真人判断或可靠建议。</div><div>识别高风险角色和对话；显著说明 AI 身份；设置危机升级、拒答和真人资源；专业角色上线前做专项评测。</div>
+        <div class="p0"><b>P0</b></div><div><b>肖像、声音和同人侵权</b><br>用户可上传形象与自己的声音，也可能提交他人素材或受版权保护的角色。</div><div>采集权利声明和授权证据；提供指纹比对、举报、下架、删除传播和申诉链路；生成内容标识来源。</div>
+        <div class="p1"><b>P1</b></div><div><b>对话数据与模型训练边界</b><br>隐私政策称对话输入和反馈可能用于模型训练，同时处理昵称、偏好、设备、推荐和关系数据。</div><div>把训练开关、保留期、导出、删除和去标识规则做成可见控制；敏感对话默认不沉淀；跨角色与跨用途隔离。</div>
+        <div class="p1"><b>P1</b></div><div><b>角色、记忆与版本冲突</b><br>设定更新、模型变化或记忆错误会导致角色崩坏、关系断裂或前后事实冲突。</div><div>绑定 Agent / Prompt / 模型 / 记忆版本；提供记忆查看、纠错、删除和回滚；上线前回归测试。</div>
+        <div class="p1"><b>P1</b></div><div><b>审核误杀与漏放</b><br>UGC、对话、图片和声音都需要治理，简单关键词既可能错杀正常内容，也可能漏掉隐蔽风险。</div><div>多模态上下文审核、明确命中原因、创作者自查、人工复核、申诉时限和策略版本审计。</div>
+        <div class="p2"><b>P2</b></div><div><b>素材与跨端状态不一致</b><br>网页与 App 草稿不互通；素材被使用后会从素材库列表移除，用户可能误以为丢失。</div><div>统一草稿事实源；显示素材“已绑定到哪个智能体”而非直接消失；提供版本、引用和恢复入口。</div>
+      </div>
+      <h3>建议评测矩阵</h3>
+      <div class="scroll"><table><thead><tr><th>评测对象</th><th>核心指标</th><th>典型测试</th><th>完成门</th></tr></thead><tbody>
+        <tr><td>角色对话</td><td>人设一致、关系一致、语言风格、剧情连贯、重复率。</td><td>长对话、跨主题、用户反驳、角色诱导、设定冲突。</td><td>关键设定不漂移，无法确定时不编造，用户能纠错。</td></tr>
+        <tr><td>工具 / 模拟器</td><td>规则遵循、计算正确、状态连续、选项有效。</td><td>跳步、非法选择、回退、重复输入、边界条件。</td><td>状态和规则可复核，不把模型自信当作正确。</td></tr>
+        <tr><td>绘画技能</td><td>触发正确、角色一致、安全、延迟、失败率。</td><td>模糊请求、连续生图、敏感素材、同一角色多场景。</td><td>结果真实出现，失败不扣重费，敏感结果不外发。</td></tr>
+        <tr><td>声音</td><td>音色一致、情绪贴合、语速、可懂度、授权完整。</td><td>长文本、情绪切换、敏感话术、相似真人音色。</td><td>播放质量合格且授权可追溯，支持删除和撤回。</td></tr>
+        <tr><td>安全与依赖</td><td>危机识别、未成年人保护、情感依赖、误拒、申诉。</td><td>自伤、医疗、性内容、操控依赖、诱导付费、角色越界。</td><td>高风险响应达到策略要求，人工升级路径真实可用。</td></tr>
+      </tbody></table></div>
+    </section>
+
+    <section id="business">
+      <h2>13｜商业化、增长与运营</h2>
+      <div class="grid four">
+        <div class="card"><span class="tag fact">免费入口</span><h4>降低连接成本</h4><p>App Store 将星野标为免费 App，用户可先通过推荐和互动建立使用习惯。</p></div>
+        <div class="card"><span class="tag fact">订阅</span><h4>月卡与连续包月</h4><p>页面列出星野月卡、星月卡、星辰卡和其他连续包月商品。</p></div>
+        <div class="card"><span class="tag fact">虚拟货币</span><h4>钻石与礼包</h4><p>钻石、等级礼包和功能次数卡把高频或高成本体验拆成小额购买。</p></div>
+        <div class="card"><span class="tag infer">供给飞轮</span><h4>UGC 扩充内容</h4><p>低门槛创作增加角色供给，推荐带来互动，互动又形成留存和付费机会。</p></div>
+      </div>
+      <h3>关键增长漏斗</h3>
+      <div class="diagram"><div class="diagram-row"><div class="box">推荐曝光<br><small>看见角色</small></div><span class="arrow">→</span><div class="box">首次连接<br><small>进入开场</small></div><span class="arrow">→</span><div class="box">有效对话<br><small>获得情绪或剧情价值</small></div><span class="arrow">→</span><div class="box">持续关系<br><small>回访、成就、记忆</small></div><span class="arrow">→</span><div class="box">订阅 / 钻石<br><small>购买更多或更高成本体验</small></div><span class="arrow">↺</span><div class="box">创作与分享<br><small>反哺内容供给</small></div></div></div>
+      <p class="muted">截至 2026-08-19，Apple App Store 页面显示版本 2.58.001、18+、免费且含 App 内购买。商品与价格会变化，报告只记录当日页面，不推断完整权益表。</p>
+    </section>
+
+    <section id="tobe">
+      <h2>14｜As-Is 与 To-Be</h2>
+      <div class="grid two">
+        <div class="card"><span class="tag fact">AS-IS</span><h4>当前可确认的产品形态</h4><ul><li>移动端承担智能体社区、发现、连接、互动和付费。</li><li>Web 创作中心承担智能体、形象素材与 FM 的生产管理。</li><li>智能体由人设、模型、技能、形象、声音和状态组成。</li><li>对话模型与工具模型满足不同创作类型。</li><li>绘画技能已开放，唱歌与搜索仍显示即将上线。</li><li>形象支持三类模型、参考图、提示词和局部重绘。</li><li>创作者通过调试台验收，再提交审核发布。</li><li>网页和 App 草稿不互通，素材使用后从库中移除。</li></ul></div>
+        <div class="card"><span class="tag suggest">TO-BE</span><h4>建议补强的产品能力</h4><ul><li><b>统一草稿与版本：</b>Web / App 共用同一智能体版本树，清楚区分草稿、待审和线上版本。</li><li><b>结构化角色契约：</b>把身份、关系、禁区、规则、输出格式和示例分字段管理，减少设定互相覆盖。</li><li><b>可治理记忆：</b>用户能看到智能体记住了什么、来源是什么，并可改、删、设为仅本角色使用。</li><li><b>技能运行记录：</b>显示触发原因、参数、耗时、结果、失败原因和费用，禁止假完成。</li><li><b>审核解释与申诉：</b>指出具体命中内容、对应规则和修改建议，保留人工复核与处理时限。</li><li><b>创作者质量台：</b>提供角色一致性、规则保持、重复率、安全和技能成功率的自动测试。</li><li><b>权利证明链：</b>形象、声音和同人素材绑定授权声明、来源和撤回传播能力。</li><li><b>情感安全设计：</b>识别过度依赖、操控付费和高风险求助，明确 AI 身份并提供真人支持。</li></ul></div>
+      </div>
+      <h3>优先级</h3>
+      <div class="grid">
+        <div class="card"><span class="tag risk">P0</span><h4>情感与专业安全完成门</h4><p>先解决高风险角色越界、危机对话、未成年人和身份误认。</p></div>
+        <div class="card"><span class="tag suggest">P1</span><h4>统一版本、记忆和素材引用</h4><p>减少跨端断裂、角色漂移、素材“消失”和线上状态不一致。</p></div>
+        <div class="card"><span class="tag suggest">P2</span><h4>创作者评测与运营透明度</h4><p>提高一次审核通过率、优质供给比例和技能稳定性。</p></div>
+      </div>
+    </section>
+
+    <section id="glossary">
+      <h2>15｜术语表</h2>
+      <div class="scroll"><table><thead><tr><th>英文 / 页面词</th><th>中文</th><th>在星野中的含义</th><th>不代表什么</th></tr></thead><tbody>
+        <tr><td>Agent / 智能体</td><td>可持续运行的 AI 角色</td><td>绑定人设、模型、技能、形象、声音和发布状态，并和用户持续互动。</td><td>不等于已经确认的多 Agent 系统。</td></tr>
+        <tr><td>Persona</td><td>人设与回复逻辑</td><td>仅创作者可见，用来决定角色身份、关系、风格、规则和回复效果。</td><td>不是给用户看的公开简介。</td></tr>
+        <tr><td>Public Profile</td><td>对外简介</td><td>帮助用户了解角色的公开说明；页面明确称其不再影响对话效果。</td><td>不能代替隐藏设定。</td></tr>
+        <tr><td>Dialogue Model</td><td>对话模型</td><td>偏自然聊天、角色语气、情绪和剧情演绎。</td><td>不是具体模型品牌或版本。</td></tr>
+        <tr><td>Tool Model</td><td>工具模型</td><td>偏规则遵循、逻辑、模拟器和相对准确的问答。</td><td>不代表一定连接了搜索、计算器或外部 API。</td></tr>
+        <tr><td>Skill</td><td>技能</td><td>在对话之外产生额外结果的能力；当前确认已开放绘画。</td><td>不是模型本身，也不是普通人设文字。</td></tr>
+        <tr><td>Material Library</td><td>素材库</td><td>保存可用于智能体的形象和声音素材，并与 App 共享部分资产。</td><td>不等于所有草稿跨端同步。</td></tr>
+        <tr><td>Inpainting</td><td>局部重绘</td><td>框选图片的一小块并描述目标效果，只修改局部区域。</td><td>不适合更换整套动作、造型或大面积构图。</td></tr>
+        <tr><td>UGC</td><td>用户生成内容</td><td>用户发布的智能体、故事、群聊、记忆薄、动态和其他作品。</td><td>不等于平台已经验证其事实或拥有全部版权。</td></tr>
+        <tr><td>Review</td><td>发布审核</td><td>智能体进入公开社区前的内容与合规检查。</td><td>不保证上线后永远安全，也不等于质量评测。</td></tr>
+      </tbody></table></div>
+    </section>
+
+    <section id="trace">
+      <h2>16｜证据追溯与来源</h2>
+      <div class="scroll"><table><thead><tr><th>编号</th><th>证据类型</th><th>可确认结论</th><th>不能据此确认</th></tr></thead><tbody>
+        <tr><td>S01</td><td>登录后 Web：形象素材库</td><td>创作中心包含智能体、形象素材、星野 FM；形象库提供创建入口和草稿状态。</td><td>生成质量、费用和失败处理。</td></tr>
+        <tr><td>S02</td><td>登录后 Web：我的智能体</td><td>列表存在全部、草稿、审核中和创建入口，并显示最近编辑时间。</td><td>审核 SLA、驳回和发布后数据。</td></tr>
+        <tr><td>S03</td><td>官方示例编辑页</td><td>设定、公开简介、开场白、技能、形象、声音、存草稿和发布是核心配置。</td><td>用户私有草稿内容与官方内部 Prompt。</td></tr>
+        <tr><td>S04</td><td>技能弹窗</td><td>绘画已开放；唱歌和搜索显示即将上线；绘画可由上下文或场景触发。</td><td>未来功能上线时间和正式契约。</td></tr>
+        <tr><td>S05</td><td>星野 FM 页面</td><td>FM 有独立素材库、草稿筛选和创建入口。</td><td>FM 创建字段、分发、计费和审核细节。</td></tr>
+        <tr><td>O01</td><td>官方创建手册：近期更新</td><td>形象支持独立风格/脸部参考、局部重绘和关键词提示。</td><td>更新日期和底层模型版本。</td></tr>
+        <tr><td>O02</td><td>官方创建手册：能力、审核、FAQ</td><td>两类语言模型、调试台、绘画、三类生图模型、素材互通和跨端草稿限制。</td><td>模型供应商、推荐、计费和完整审核策略。</td></tr>
+        <tr><td>O03</td><td>官网与 Apple App Store</td><td>产品定位为多模态智能体内容社区；支持创造、分享、互动和 App 内购买。</td><td>营销承诺一定在所有账号和版本生效。</td></tr>
+        <tr><td>O04</td><td>星野隐私政策（2026-08-13 生效）</td><td>账号、智能体、对话、推荐、成就、支付、训练使用、审核共享和个人信息管理边界。</td><td>内部数据表、实际保留时长和算法实现。</td></tr>
+      </tbody></table></div>
+      <h3>官方来源</h3>
+      <ul class="source-list">
+        <li><a href="https://www.xingyeai.com/">星野官网</a>，查看日期：2026-08-19。</li>
+        <li><a href="https://www.xingyeai.com/create">星野创作中心</a>，登录后只读查看：2026-08-19。</li>
+        <li><a href="https://vrfi1sk8a0.feishu.cn/wiki/Jeyaw1oZJiLuMykqsiucbcR1nWd">星野创作中心创建手册</a>，由创作中心直接打开，查看日期：2026-08-19。</li>
+        <li><a href="https://apps.apple.com/cn/app/id6463076337">Apple App Store：星野</a>，查看日期：2026-08-19。</li>
+        <li><a href="https://m.xingyeai.com/static/privacy">星野隐私政策</a>，政策更新/生效日期：2026-08-13。</li>
+      </ul>
+      <p class="muted">本报告是基于可见产品行为和官方资料的功能等价拆解，不代表星野官方内部技术架构。页面未公开的模型、数据库、算法、队列、云服务和组织流程均保持推断或未知。</p>
+    </section>
+  </main>
+  <footer>星野 AI 产品架构逆向分析 · 证据截止 2026-08-19 · 仅用于产品研究与学习</footer>
+</body>
+</html>
