@@ -1,0 +1,407 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="基于 WorkBuddy 登录后 Web 页面、官网、定价页与官方文档的证据化产品架构拆解">
+  <title>WorkBuddy｜AI 产品架构逆向分析</title>
+  <style>
+    :root{
+      --bg:#f4f1e8;--paper:#fffdf8;--ink:#17201c;--muted:#66706a;--line:#d8d4c7;
+      --deep:#17231d;--brand:#e96f3d;--fact:#147d64;--infer:#4267a8;--suggest:#b8611e;
+      --unknown:#736b7a;--risk:#b6433b;--soft:#ece8dc;--blue:#edf3fc;--green:#e8f5ef;
+    }
+    *{box-sizing:border-box}html{scroll-behavior:smooth}
+    body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.68 Inter,"PingFang SC","Microsoft YaHei",sans-serif}
+    a{color:#155e75;text-decoration-thickness:1px;text-underline-offset:3px}a:hover{color:var(--brand)}
+    header{background:linear-gradient(118deg,#17231d 0%,#233c2d 67%,#305242 100%);color:white;padding:54px max(22px,calc((100vw - 1280px)/2)) 46px;border-bottom:7px solid var(--brand)}
+    header small{font:700 12px/1 ui-monospace,SFMono-Regular,monospace;letter-spacing:.16em;color:#ffd2bd}
+    header h1{font-size:clamp(40px,6vw,72px);line-height:1;margin:.22em 0 .15em;letter-spacing:-.04em}
+    header .lead{max-width:1020px;font-size:clamp(17px,2vw,22px);line-height:1.55;margin:0 0 22px;color:#f6f2e8}
+    .meta{display:flex;gap:8px;flex-wrap:wrap}.chip{display:inline-block;border:1px solid #ffffff4a;border-radius:999px;padding:5px 9px;font-size:12px;background:#ffffff12}
+    nav{position:sticky;top:0;z-index:8;background:#fffdf3ef;backdrop-filter:blur(12px);border-bottom:1px solid var(--line);overflow:auto;white-space:nowrap;padding:10px max(20px,calc((100vw - 1280px)/2))}
+    nav a{display:inline-block;margin-right:18px;color:#2c3b33;font-size:12px;font-weight:700;text-decoration:none}
+    main{max-width:1280px;margin:auto;padding:34px 20px 78px}section{margin:0 0 54px;scroll-margin-top:60px}
+    h2{font-size:27px;line-height:1.25;margin:0 0 18px;padding-bottom:10px;border-bottom:2px solid #2d3d34}h3{font-size:18px;margin:22px 0 10px}h4{margin:0 0 6px;font-size:15px}
+    p{margin:7px 0}.muted{color:var(--muted)}.small{font-size:12px}.mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+    .grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:13px}.grid.two{grid-template-columns:repeat(2,minmax(0,1fr))}.grid.four{grid-template-columns:repeat(4,minmax(0,1fr))}
+    .card{background:var(--paper);border:1px solid var(--line);padding:16px;box-shadow:0 1px 0 #ffffff inset}.card.accent{border-top:4px solid var(--brand)}
+    .metric{font-size:27px;font-weight:800;line-height:1.1}.eyebrow{font:700 11px/1.2 ui-monospace,monospace;letter-spacing:.08em;color:var(--muted);text-transform:uppercase}
+    .tag{display:inline-block;border-radius:999px;padding:3px 7px;font:700 11px/1.2 ui-monospace,monospace;white-space:nowrap}.fact{color:var(--fact);background:var(--green)}.infer{color:var(--infer);background:var(--blue)}.suggest{color:var(--suggest);background:#fff0e1}.unknown{color:var(--unknown);background:#f1edf4}.risk{color:var(--risk);background:#fdebea}
+    .verdict{background:#fff8eb;border:1px solid #e2c99d;border-left:6px solid var(--brand);padding:17px 19px;font-size:16px}.verdict strong{font-size:18px}
+    .scroll{overflow:auto;border:1px solid var(--line);background:white}table{border-collapse:collapse;width:100%;min-width:980px}th,td{border-right:1px solid var(--line);border-bottom:1px solid var(--line);padding:9px;text-align:left;vertical-align:top}th{position:sticky;top:0;background:var(--deep);color:white;font-size:12px}tr:last-child td{border-bottom:0}
+    .flow{display:grid;grid-template-columns:repeat(7,minmax(150px,1fr));gap:9px;overflow:auto;padding:2px}.step{position:relative;background:var(--paper);border:1px solid var(--line);padding:14px;min-height:145px}.step:not(:last-child):after{content:"→";position:absolute;right:-9px;top:46%;z-index:2;background:var(--bg);color:var(--brand);font-weight:900}.step b{display:block;margin-bottom:5px}.step .n{color:var(--brand);font:800 12px ui-monospace,monospace}
+    .lane{display:grid;grid-template-columns:145px repeat(5,minmax(200px,1fr));overflow:auto;background:white;border:1px solid var(--line)}.lane>*{padding:10px;border-right:1px solid var(--line);border-bottom:1px solid var(--line);min-width:150px}.lane b{background:var(--deep);color:white}.lane strong{background:#e8ece7}
+    .compare{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.role-card{background:white;border:1px solid var(--line);padding:17px;border-top:5px solid var(--fact)}.role-card:nth-child(2){border-top-color:var(--infer)}.role-card:nth-child(3){border-top-color:var(--brand)}.role-card .big{font-size:24px;font-weight:900}.role-card dl{margin:10px 0 0}.role-card dt{font-weight:800;margin-top:8px}.role-card dd{margin:1px 0 0;color:#455249}
+    .layer{display:grid;grid-template-columns:205px 1fr;background:white;border:1px solid var(--line);margin:8px 0}.layer>strong{background:var(--deep);color:white;padding:14px}.nodes{display:grid;grid-template-columns:repeat(4,minmax(190px,1fr));gap:8px;padding:10px}.node{border:1px solid var(--fact);background:#fbfffd;padding:10px;border-radius:3px;min-height:92px}.node b{display:block}.node small{display:block;color:var(--muted);font:700 10px/1.4 ui-monospace,monospace;margin:3px 0}.node p{font-size:12px;line-height:1.48;margin:5px 0 0}.node.inferred{border-style:dashed;border-color:var(--infer);background:#f7faff}.node.suggested{border:2px dotted var(--suggest);background:#fffaf4}.node.unknown-node{border-style:dashed;border-color:var(--unknown);background:#faf8fb}
+    .diagram{background:#fff;border:1px solid var(--line);padding:18px}.diagram-row{display:flex;align-items:stretch;justify-content:center;gap:9px;flex-wrap:wrap}.box{min-width:150px;max-width:220px;flex:1;padding:12px;border:1px solid #4b6f5b;background:#f8fcf9;text-align:center}.box.inferred{border-style:dashed;border-color:var(--infer);background:#f6f9ff}.box.suggested{border:2px dotted var(--suggest);background:#fffaf4}.arrow{align-self:center;font-size:22px;color:var(--brand);font-weight:900}.divider{height:1px;background:var(--line);margin:16px 0}
+    .state{display:flex;gap:7px;align-items:center;overflow:auto;padding:4px 0 10px}.state span{min-width:130px;padding:10px;border:1px solid var(--line);background:white;text-align:center}.state i{font-style:normal;color:var(--brand);font-weight:900}
+    .risk-matrix{display:grid;grid-template-columns:90px 1fr 1fr;gap:1px;background:var(--line);border:1px solid var(--line)}.risk-matrix>*{background:var(--paper);padding:12px}.risk-matrix .head{background:var(--deep);color:white;font-weight:700}.p0{border-left:5px solid #a62921}.p1{border-left:5px solid #d27a2d}.p2{border-left:5px solid #b6a045}
+    .callout{padding:12px 14px;background:#eff5f1;border-left:4px solid var(--fact)}ul{margin:7px 0;padding-left:20px}li{margin:4px 0}.source-list{columns:2;column-gap:28px}.source-list li{break-inside:avoid;margin-bottom:8px}
+    footer{max-width:1280px;margin:auto;padding:0 20px 42px;color:var(--muted);font-size:12px}
+    @media(max-width:1050px){.nodes{grid-template-columns:repeat(2,minmax(210px,1fr))}.compare{grid-template-columns:1fr}.grid.four{grid-template-columns:1fr 1fr}}
+    @media(max-width:800px){.grid,.grid.two,.grid.four{grid-template-columns:1fr}.source-list{columns:1}.layer{grid-template-columns:1fr}.layer>strong{padding:10px}.nodes{grid-template-columns:1fr}.risk-matrix{grid-template-columns:70px 1fr}}
+    @media(max-width:640px){header{padding-top:38px}.risk-matrix{grid-template-columns:1fr}.risk-matrix .head:nth-child(2),.risk-matrix .head:nth-child(3){display:none}.flow{grid-template-columns:repeat(7,230px)}h2{font-size:23px}}
+    @media print{nav{display:none}body{background:white}.card,.step,.diagram,.scroll,.layer{break-inside:avoid}section{break-inside:auto}}
+  </style>
+</head>
+<body>
+  <header>
+    <small>AI PRODUCT REVERSE ANALYSIS · 2026-08-19</small>
+    <h1>WorkBuddy</h1>
+    <p class="lead">它不是“多一个聊天框”，而是把自然语言任务、项目上下文、专家方法、可执行技能、外部连接器和最终文件交付串成一条办公生产线：用户说清目标，系统组织执行，用户在关键权限点确认，并对产物负责验收。</p>
+    <div class="meta"><span class="chip">登录后 Web 工作台</span><span class="chip">官网 / 定价 / 官方文档</span><span class="chip">只读拆解</span><span class="chip">未发送任务 / 未上传文件 / 未授权连接器</span><span class="chip">风险：高（本地文件 + 外部执行）</span></div>
+  </header>
+  <nav>
+    <a href="#summary">结论</a><a href="#scope">证据</a><a href="#value">用户与价值</a><a href="#map">功能地图</a><a href="#journey">用户旅程</a><a href="#contract">能力契约</a><a href="#three">专家/技能/连接器</a><a href="#agent">Agent</a><a href="#context">上下文与数据</a><a href="#architecture">分层架构</a><a href="#state">状态与实体</a><a href="#governance">安全</a><a href="#business">商业化</a><a href="#tobe">As-Is / To-Be</a><a href="#glossary">术语表</a><a href="#trace">证据追溯</a>
+  </nav>
+  <main>
+    <section id="summary">
+      <h2>01｜执行摘要</h2>
+      <div class="verdict"><strong>核心判断：</strong>WorkBuddy 的产品单位不是“一次回答”，而是一个可持续推进的 <b>Task（任务）</b>：它绑定对话、工作空间、项目规则、模型、工具调用、文件变更与最终产物。真正的差异化不是“模型会不会写”，而是能否把任务从输入一直推进到可查看、可修改、可分享的业务结果。 <span class="tag fact">E01–E14</span></div>
+      <div class="grid four" style="margin-top:13px">
+        <div class="card accent"><div class="eyebrow">用户买的不是答案</div><p class="metric">完整交付</p><p>报告、Word、Excel、PPT、网页、代码修改等结果集中进入右侧“产物”区。</p></div>
+        <div class="card accent"><div class="eyebrow">核心组织方式</div><p class="metric">任务 + 项目</p><p>任务负责一次执行；项目负责长期共享指令、资料、专家、技能、连接器和成员。</p></div>
+        <div class="card accent"><div class="eyebrow">能力扩展方式</div><p class="metric">角色 + 动作 + 外部系统</p><p>专家决定“用什么专业视角”；技能决定“能执行什么动作”；连接器决定“能访问哪个系统”。</p></div>
+        <div class="card accent"><div class="eyebrow">最大风险</div><p class="metric">真的会动手</p><p>它能读写文件、运行脚本、调用连接器和定时执行，因此权限、确认、审计和回滚比聊天质量更重要。</p></div>
+      </div>
+      <h3>先用三句话看懂产品</h3>
+      <div class="grid">
+        <div class="card"><span class="tag fact">1 输入</span><h4>把目标和材料交给它</h4><p>用户用自然语言描述目标，并通过工作空间、文件、截图、项目资料、个人记忆或连接器补充上下文。</p></div>
+        <div class="card"><span class="tag fact">2 执行</span><h4>它规划、选模型、调工具</h4><p>默认模式直接推进任务；Plan（计划）模式先整理思路；Ask（仅问答）模式只回答，不主动执行。</p></div>
+        <div class="card"><span class="tag fact">3 交付</span><h4>用户核验真实产物</h4><p>右侧区域同时展示工作空间文件、网页预览、文件变更和产物，用户可以继续修改、分享或放入项目资料库。</p></div>
+      </div>
+    </section>
+
+    <section id="scope">
+      <h2>02｜查看范围、证据与边界</h2>
+      <div class="grid">
+        <div class="card"><h4>登录后页面（只读）</h4><ul><li>S01：新建任务、日常办公 / 代码开发、场景入口、输入框和右栏</li><li>S02：项目页与项目模板</li><li>S03：专家中心与专家团入口</li><li>S04：技能市场、已安装、添加技能</li><li>S05：连接器列表</li><li>S06：Auto / 显式模型、Plan / Ask / 默认模式</li></ul></div>
+        <div class="card"><h4>官方公开资料</h4><ul><li>O01：官网定位、公开演示和腾讯生态</li><li>O02：个人版与企业版定价</li><li>O03：任务创建、管理与结果查看</li><li>O04：项目、资料库与多人协作</li><li>O05：专家、技能、连接器和模型</li><li>O06：权限沙箱、记忆、自动化与数据管理</li></ul></div>
+        <div class="card"><h4>主动没有做</h4><ul><li>没有发送任何任务或消耗积分</li><li>没有打开用户私人任务内容</li><li>没有上传本地文件或选择代码仓库</li><li>没有连接、授权或调用第三方服务</li><li>没有创建项目、自动化或分享链接</li><li>没有购买套餐或切换完全访问权限</li></ul></div>
+      </div>
+      <div class="callout" style="margin-top:13px"><b>产品类型路由：</b><span class="tag fact">助手 / Copilot</span> 帮用户理解并完成任务；<span class="tag fact">Agent 平台 / 自动化</span> 规划、工具、状态和定时执行；<span class="tag fact">企业 AI / SaaS</span> 项目、成员、权限、审计、租户隔离和企业计费。没有根据产品宣传反推数据库、内部微服务或真实模型路由算法。</div>
+    </section>
+
+    <section id="value">
+      <h2>03｜用户、场景、痛点与价值</h2>
+      <div class="scroll"><table><thead><tr><th>用户</th><th>原来怎么做</th><th>WorkBuddy 提供什么</th><th>第一次感受到价值</th><th>失败代价</th><th>证据</th></tr></thead><tbody>
+        <tr><td>普通职场人、行政、运营</td><td>在聊天 AI、文档、表格、浏览器之间来回复制</td><td>一句话启动文档、表格、幻灯片、研究、邮件与设计任务，并生成文件</td><td>右侧出现可打开的真实产物，而不是只有一段回答</td><td>错误内容被直接分享；本地文件被覆盖</td><td><span class="tag fact">S01 O01 O03</span></td></tr>
+        <tr><td>产品经理、研究与咨询人员</td><td>手工检索、整理来源、写报告、画图、做 PPT</td><td>深度研究、产品管理、项目模板、专家与报告交付</td><td>研究路径、工具时间线和多格式报告一起出现</td><td>引用不支持结论；资料过期；策略建议被误当事实</td><td><span class="tag fact">S01 S02 O01</span></td></tr>
+        <tr><td>开发者与技术团队</td><td>IDE、终端、仓库、文档、CI/CD 分散操作</td><td>代码开发模式、仓库选择、日常开发、网站、Agent、Skill、CI/CD</td><td>能看到文件变更并在网页预览中验证结果</td><td>命令、依赖或路径错误影响代码与环境</td><td><span class="tag fact">S01 O03 O05</span></td></tr>
+        <tr><td>团队负责人、项目管理员</td><td>靠群聊反复交代规则、材料和上下文</td><td>项目统一配置指令、资料、成员、专家、技能和连接器，任务自动继承</td><td>新成员进入任务时不必重新解释全部背景</td><td>项目权限配置错误造成跨成员或外部系统越权</td><td><span class="tag fact">S02 O04</span></td></tr>
+        <tr><td>企业 IT、AI 平台与安全团队</td><td>分别采购模型、插件、知识库和办公自动化</td><td>企业模型配置、OpenAPI、审计、组织、用量、网络、插件与租户隔离</td><td>能集中控制成员、模型、用量与企业能力</td><td>凭据泄露、跨租户访问、无人值守任务产生副作用</td><td><span class="tag fact">O02 O05 O06</span></td></tr>
+      </tbody></table></div>
+      <h3>一句话价值主张</h3>
+      <p class="verdict">让不会写代码的用户也能把“我要做什么”转成可查看的办公成果；让团队把规则、资料和工具沉淀到项目中；让有权限的 Agent 不只提出建议，还能在安全护栏内执行文件和外部系统操作。</p>
+    </section>
+
+    <section id="map">
+      <h2>04｜核心功能地图：每个模块到底负责什么</h2>
+      <div class="grid four">
+        <div class="card"><span class="tag fact">Task｜任务</span><h4>一次工作的执行容器</h4><p><b>输入：</b>目标、材料、模型、工作空间。<br><b>作用：</b>承载对话、计划、工具调用与状态。<br><b>输出：</b>回答、文件、网页、代码变更和产物。</p></div>
+        <div class="card"><span class="tag fact">Project｜项目</span><h4>团队长期上下文</h4><p><b>输入：</b>指令、成员、资料、专家、技能、连接器。<br><b>作用：</b>让项目内任务自动继承公共配置。<br><b>输出：</b>共享任务、资产、动态和协作记录。</p></div>
+        <div class="card"><span class="tag fact">Expert｜专家</span><h4>换一个专业角色做事</h4><p><b>输入：</b>领域人设、方法论、工具链。<br><b>作用：</b>规定思考视角与交付方法。<br><b>输出：</b>符合该专业角色的分析和产物。</p></div>
+        <div class="card"><span class="tag fact">Expert Team｜专家团</span><h4>多个角色协同完成复杂任务</h4><p><b>输入：</b>复杂目标。<br><b>作用：</b>团长拆解任务，多位专家并行执行并整合。<br><b>输出：</b>跨角色的完整交付；积分通常更高。</p></div>
+        <div class="card"><span class="tag fact">Skill｜技能</span><h4>让 AI 学会一个可复用动作</h4><p><b>输入：</b>参数、文件、任务上下文。<br><b>作用：</b>运行封装脚本或工作流。<br><b>输出：</b>查询结果、文件变化或外部动作。</p></div>
+        <div class="card"><span class="tag fact">Connector｜连接器</span><h4>让任务访问外部系统</h4><p><b>输入：</b>用户授权和调用参数。<br><b>作用：</b>通过 MCP / CLI 等桥接邮箱、文档、知识库、项目平台。<br><b>输出：</b>外部数据或真实写入结果。</p></div>
+        <div class="card"><span class="tag fact">Workspace｜工作空间</span><h4>本次任务读写文件的边界</h4><p><b>输入：</b>用户选定或自动创建的文件夹。<br><b>作用：</b>限定文件读取与保存范围。<br><b>输出：</b>任务文件、变更与最终产物。</p></div>
+        <div class="card"><span class="tag fact">Artifact｜产物</span><h4>可交付、可验证的业务结果</h4><p><b>包括：</b>Word、Markdown、PDF、Excel、CSV、PPT、网页和代码。<br><b>关键：</b>产物存在不等于内容正确，仍需用户验收。</p></div>
+        <div class="card"><span class="tag fact">Knowledge / RAG｜项目资料库</span><h4>给任务提供项目事实</h4><p>项目资产以检索增强方式进入任务上下文。简单说，就是先从项目资料里找相关内容，再交给模型使用。</p></div>
+        <div class="card"><span class="tag fact">Memory｜个人记忆</span><h4>跨任务记住用户偏好</h4><p>每晚从会话提取事实、偏好、关系和跟进事项；仅本人可见，可新增、修改、删除或关闭。</p></div>
+        <div class="card"><span class="tag fact">Automation｜自动化</span><h4>按时间无人值守地重复执行</h4><p>保存名称、提示词、模型、技能、工作目录和调度规则，到点以当前登录身份启动 Agent 任务。</p></div>
+        <div class="card"><span class="tag fact">Right Result Panel｜右侧结果区</span><h4>边执行边验收</h4><p>把概览、工作空间文件、浏览器预览、文件变更、产物和引用来源放在同一处，减少“AI 说完成但结果找不到”。</p></div>
+      </div>
+    </section>
+
+    <section id="journey">
+      <h2>05｜端到端用户旅程</h2>
+      <div class="flow">
+        <div class="step"><span class="n">01</span><b>选择任务场景</b><p>日常办公或代码开发；也可从幻灯片、研究、文档、数据、设计等快捷入口开始。</p><span class="tag fact">S01</span></div>
+        <div class="step"><span class="n">02</span><b>描述目标</b><p>说清要做什么、输入材料、输出格式、约束和截止条件。</p><span class="tag fact">O03</span></div>
+        <div class="step"><span class="n">03</span><b>补充上下文</b><p>选工作空间，@ 引用文件或规则，上传材料；项目任务还会自动继承项目指令、资料和个人记忆。</p><span class="tag fact">O03 O04</span></div>
+        <div class="step"><span class="n">04</span><b>选择执行方式</b><p>默认模式直接推进；Plan 先列计划；Ask 只问答。可选专家、技能、连接器和模型。</p><span class="tag fact">S06</span></div>
+        <div class="step"><span class="n">05</span><b>规划与执行</b><p>系统分析任务、调用模型和工具；高风险文件、命令或网络操作在默认权限下暂停确认。</p><span class="tag fact">O01 O06</span></div>
+        <div class="step"><span class="n">06</span><b>查看与核验</b><p>对照对话、引用、网页预览、文件变更和产物，判断真实结果是否存在且正确。</p><span class="tag fact">O03</span></div>
+        <div class="step"><span class="n">07</span><b>继续复用</b><p>继续对话修改，分享、归档、保存到项目资料库，或把成熟任务变成定时自动化。</p><span class="tag fact">O04 O06</span></div>
+      </div>
+      <h3>五条同时发生的“流”</h3>
+      <div class="lane">
+        <b>流 / 阶段</b><b>输入</b><b>组织</b><b>执行</b><b>验证</b><b>复用</b>
+        <strong>用户交互流</strong><div>描述目标、选择场景</div><div>选模式、专家、技能、模型</div><div>查看进度、处理确认</div><div>检查产物和变更</div><div>分享、归档、继续修改</div>
+        <strong>Agent 控制流</strong><div>理解意图</div><div>拆步骤、组装上下文</div><div>模型推理、工具调用、专家协作</div><div>形成回答与交付清单</div><div>继续任务或转为自动化</div>
+        <strong>数据与上下文流</strong><div>文件、截图、项目资料、记忆</div><div>按用户/项目/任务权限筛选</div><div>读取工具结果和业务状态</div><div>写入工作空间、任务状态与日志</div><div>产物进入项目资产或分享</div>
+        <strong>权限与安全流</strong><div>识别登录身份和授权</div><div>限定工作空间与连接器范围</div><div>敏感路径、删除、脚本、网络前确认</div><div>审计文件变更与外部结果</div><div>关闭分享、撤销连接、删除记忆</div>
+      </div>
+    </section>
+
+    <section id="contract">
+      <h2>06｜AI 能力契约：能做什么、不负责什么</h2>
+      <div class="scroll"><table><thead><tr><th>能力</th><th>用户问题</th><th>输入</th><th>可见输出</th><th>自主级别</th><th>怎么验证</th><th>失败与边界</th></tr></thead><tbody>
+        <tr><td>通用任务规划与执行</td><td>一个模糊目标如何变成步骤和成果</td><td>目标、范围、材料、模式、项目上下文</td><td>执行过程、工具时间线、回答、文件</td><td>4 用户在高风险动作前确认</td><td>检查真实文件、变更、网页和引用</td><td>内部规划算法未知；理解偏差会传到所有下游</td></tr>
+        <tr><td>深度研究</td><td>如何从多源资料形成结构化报告</td><td>研究问题、时间范围、来源要求</td><td>结论、证据、报告、表格和 PPT</td><td>3 生成草稿</td><td>逐结论回查来源、日期和统计口径</td><td>官网演示能确认工作流，不等于示例里的行业数字已经核验</td></tr>
+        <tr><td>办公文件生成</td><td>如何直接得到 Word / Excel / PPT / PDF</td><td>内容、模板、格式、风格和数据</td><td>可预览、可下载的文件产物</td><td>3 生成草稿</td><td>打开文件检查内容、公式、排版和可编辑性</td><td>生成成功不等于没有溢出、公式错误或事实错误</td></tr>
+        <tr><td>代码与网页开发</td><td>如何让 AI 在仓库或工作目录中修改并运行代码</td><td>仓库、工作空间、需求、测试要求</td><td>代码文件、变更视图、网页预览</td><td>4 高风险命令需确认</td><td>审阅 diff、运行测试、验证页面与回滚</td><td>完全访问权限会跳过二次确认，风险显著上升</td></tr>
+        <tr><td>专家 / 专家团</td><td>如何用专业方法解决单点或复杂问题</td><td>任务、专家人设、方法论、可能的工具</td><td>专业分析或多角色综合交付</td><td>2–4，取决于是否调用工具</td><td>检查角色边界、来源和真实业务结果</td><td>专家不是持证专业人员；专家团积分通常为单专家 3–5 倍</td></tr>
+        <tr><td>项目知识检索</td><td>如何让任务基于团队材料而不是凭空回答</td><td>项目资料库、用户权限、问题</td><td>以 reference 进入上下文的相关资料</td><td>1–3</td><td>确认引用文件、版本和权限是否正确</td><td>分块、排序、无答案和冲突处理细节未公开</td></tr>
+        <tr><td>连接器执行</td><td>如何读取邮件、文档、知识库或项目系统并进行动作</td><td>OAuth / API 授权、参数、用户指令</td><td>外部数据、写入结果或消息</td><td>4 用户授权后执行</td><td>回到外部系统确认真实状态</td><td>第三方服务失败、权限变化、重复执行和数据外发风险</td></tr>
+        <tr><td>自动化任务</td><td>如何定时生成简报、周报或整理数据</td><td>提示词、时间规则、模型、技能、工作目录</td><td>执行记录、文件和小程序推送</td><td>5 预授权范围内自动执行</td><td>先低频试跑，核验日志、产物和外部副作用</td><td>无人值守；调用模型、MCP 和连接器会消耗积分并可能共享数据</td></tr>
+      </tbody></table></div>
+    </section>
+
+    <section id="three">
+      <h2>07｜最容易混淆的三个概念</h2>
+      <div class="compare">
+        <article class="role-card"><span class="tag fact">Expert / Agent</span><div class="big">专家 = 谁来做</div><p>它改变的是角色、判断框架和工作方法。</p><dl><dt>白话例子</dt><dd>让“战略咨询顾问”而不是通用助手来分析市场。</dd><dt>本身有没有权限</dt><dd>没有。只有配备技能或连接器并得到授权后，才会间接访问文件或外部服务。</dd><dt>适合</dt><dd>需要专业视角、方法论和固定交付标准的任务。</dd></dl></article>
+        <article class="role-card"><span class="tag fact">Skill</span><div class="big">技能 = 会做什么动作</div><p>它把脚本和工作流封装成可重复调用的能力。</p><dl><dt>白话例子</dt><dd>Excel 文件处理、浏览器自动化、股票查询、发送邮件。</dd><dt>风险</dt><dd>可能读写本地文件、运行命令或把数据发送给第三方。</dd><dt>适合</dt><dd>输入和输出相对明确、可以反复执行的动作。</dd></dl></article>
+        <article class="role-card"><span class="tag fact">Connector / MCP</span><div class="big">连接器 = 去哪里拿数据或执行</div><p>它把外部系统接入任务流程。</p><dl><dt>白话例子</dt><dd>腾讯文档、乐享知识库、QQ 邮箱、TAPD、Notion、GitHub、Supabase。</dd><dt>权限</dt><dd>每个连接器独立授权，不超过用户在第三方已有的权限。</dd><dt>适合</dt><dd>任务必须读取或改变外部业务系统时。</dd></dl></article>
+      </div>
+      <div class="callout" style="margin-top:13px"><b>把三者连起来：</b>“产品经理专家”决定用什么方法拆需求；“PRD 生成技能”负责执行固定写作流程；“腾讯文档连接器”负责读取旧需求并把新文档写回腾讯文档。三者不是同一层。</div>
+    </section>
+
+    <section id="agent">
+      <h2>08｜Agent 与工作流架构</h2>
+      <div class="verdict"><span class="tag fact">已确认的产品行为</span> 官网与文档明确出现自主规划、工具调用、专家团团长拆解、并行执行、多 Agent 协作和自动化任务。<span class="tag infer">内部实现仍是推断</span> 页面没有公开真正的调度服务名、队列、模型路由算法或 Agent 间通信协议，因此下图使用功能名称，不冒充官方内部模块名。</div>
+      <h3>一次任务是怎么跑起来的</h3>
+      <div class="diagram"><div class="diagram-row">
+        <div class="box">用户目标<br><small>任务 + 材料 + 约束</small></div><span class="arrow">→</span>
+        <div class="box inferred">任务控制组件<br><small>识别模式、状态与完成门</small></div><span class="arrow">→</span>
+        <div class="box inferred">上下文组装<br><small>项目 + 文件 + 记忆 + 权限</small></div><span class="arrow">→</span>
+        <div class="box">模型 / 专家规划<br><small>单专家或专家团拆解</small></div><span class="arrow">→</span>
+        <div class="box">技能 / 连接器执行<br><small>本地动作 + 外部系统</small></div><span class="arrow">→</span>
+        <div class="box">结果组装<br><small>回答 + 变更 + 产物 + 引用</small></div><span class="arrow">→</span>
+        <div class="box">用户验收<br><small>确认、修改、分享或归档</small></div>
+      </div></div>
+      <h3>三个主要运行角色</h3>
+      <div class="grid">
+        <div class="card"><span class="tag infer">功能命名</span><h4>任务控制组件</h4><p><b>目标：</b>维持任务状态并决定下一步。<br><b>输入：</b>用户消息、模式、工作空间、项目规则。<br><b>输出：</b>计划、步骤、工具请求、等待确认或完成。<br><b>停止条件：</b>产物已生成并通过完成门，或失败 / 用户中断。</p></div>
+        <div class="card"><span class="tag fact">Expert / Team</span><h4>专家或专家团</h4><p><b>目标：</b>按领域方法完成分析。<br><b>输入：</b>任务上下文和专业配置。<br><b>输出：</b>专业结论、结构化草稿和下游任务。<br><b>边界：</b>没有技能或连接器时，不拥有系统访问权限。</p></div>
+        <div class="card"><span class="tag fact">Automation Run</span><h4>自动化运行</h4><p><b>目标：</b>到点重复执行预设任务。<br><b>输入：</b>调度规则、提示词、模型、技能、工作目录。<br><b>输出：</b>一次新的对话 / 执行、产物、日志和通知。<br><b>边界：</b>仅在配置时间触发，受频率、时长与并发限制。</p></div>
+      </div>
+    </section>
+
+    <section id="context">
+      <h2>09｜上下文、记忆、知识与数据</h2>
+      <div class="scroll"><table><thead><tr><th>对象</th><th>白话解释</th><th>从哪里来</th><th>谁使用</th><th>范围 / 权限</th><th>时效与风险</th></tr></thead><tbody>
+        <tr><td>Identity Context<br>身份上下文</td><td>“现在是谁、属于哪个组织、能用什么套餐和权限”</td><td>登录账号、组织与企业配置</td><td>任务、项目、连接器、计费</td><td>用户 / 组织 / 租户</td><td>成员变化后权限需要及时刷新</td></tr>
+        <tr><td>Request Context<br>请求上下文</td><td>“这一次到底要做什么”</td><td>用户目标、文件、截图、约束、输出格式</td><td>任务控制、模型、技能</td><td>单次任务</td><td>输入不完整会导致错误计划</td></tr>
+        <tr><td>Project Context<br>项目上下文</td><td>“这个团队一直遵守什么规则、共享什么材料”</td><td>项目指令、资料、专家、技能、连接器</td><td>项目内所有新任务</td><td>项目成员与角色权限</td><td>项目配置更新后，旧任务如何追溯版本未完全公开</td></tr>
+        <tr><td>Task / Conversation<br>任务与对话</td><td>“这个任务已经说过什么、做到哪一步”</td><td>消息、计划、工具结果、状态</td><td>后续对话与任务恢复</td><td>任务成员</td><td>可继续失败或中断任务；摘要与事实冲突需保留</td></tr>
+        <tr><td>Workspace<br>工作空间</td><td>“本次任务主要读写哪个文件夹”</td><td>用户选择或系统自动创建</td><td>文件工具、代码、产物</td><td>默认受安全沙箱约束</td><td>选错根目录会放大删除和覆盖风险</td></tr>
+        <tr><td>Project Knowledge / RAG<br>项目知识检索</td><td>“先从项目材料里找相关内容，再给模型使用”</td><td>项目资产库、上传文件和保存的产物</td><td>项目任务</td><td>Agent 与当前用户使用同一访问权限</td><td>资料版本、引用和无答案处理仍需验证</td></tr>
+        <tr><td>Memory<br>个人记忆</td><td>“从历史会话中记住用户偏好和事实”</td><td>每晚从当天会话抽取；也可从其他 AI 导入</td><td>未来对话和任务</td><td>仅本人可见，可编辑、删除、关闭</td><td>可能概括错误或过期；重要判断前必须核对</td></tr>
+        <tr><td>Tool / Connector Context<br>工具上下文</td><td>“调用什么、用什么权限、结果或错误是什么”</td><td>技能、MCP、CLI、OAuth、API Key</td><td>任务和自动化</td><td>每个连接器独立授权</td><td>第三方稳定性、数据共享和重复动作风险</td></tr>
+        <tr><td>Model Context<br>模型上下文</td><td>“用哪个模型、能力、配置和成本”</td><td>Auto 或显式模型、自定义模型、本地配置</td><td>每次模型调用</td><td>自定义 API Key 官方称仅保存在本地</td><td>Auto 路由规则、回退顺序和复现条件未公开</td></tr>
+        <tr><td>Artifact / Change<br>产物与变更</td><td>“AI 真正生成或改了什么”</td><td>模型、技能、连接器</td><td>用户、项目、分享对象</td><td>任务角色 + 项目角色</td><td>文件存在不等于内容正确；分享链接需管理</td></tr>
+        <tr><td>Usage / Billing<br>用量与计费</td><td>“这次任务用了多少积分，谁来付”</td><td>模型、专家团、自动化和复杂技能调用</td><td>用户、企业管理员和账单</td><td>个人套餐或企业坐席</td><td>外部模型费用由第三方另计</td></tr>
+      </tbody></table></div>
+    </section>
+
+    <section id="architecture">
+      <h2>10｜产品十层架构（As-Is）</h2>
+      <p class="verdict"><b>阅读方式：</b>从上往下看。上层是用户能看到和使用的产品；中层解释任务如何被 Agent、模型和工具完成；下层说明文件、知识、权限、计费和基础设施怎样支撑运行。每个节点都写明“它负责什么”。</p>
+      <div class="layer"><strong>1 用户与渠道<br><span class="small">USERS &amp; CHANNELS</span></strong><div class="nodes">
+        <div class="node"><b>个人 Web / 客户端用户</b><small>PERSONAL USER</small><p>创建任务、处理文件、查看产物和管理个人记忆。</p></div>
+        <div class="node"><b>项目成员与管理员</b><small>PROJECT MEMBER / ADMIN</small><p>共享规则和资料，邀请成员，审批加入并管理项目权限。</p></div>
+        <div class="node"><b>企业 IT 与安全团队</b><small>ENTERPRISE ADMIN</small><p>管理组织、模型、用量、审计、专属网络和租户隔离。</p></div>
+        <div class="node"><b>多端助理入口</b><small>MINI APP / MOBILE / IM BOT</small><p>官方文档列出小程序、移动端、微信、企微、QQ、飞书和钉钉接入。</p></div>
+      </div></div>
+      <div class="layer"><strong>2 交互与体验<br><span class="small">INTERACTION &amp; EXPERIENCE</span></strong><div class="nodes">
+        <div class="node"><b>自然语言任务输入</b><small>NATURAL-LANGUAGE TASK</small><p>用户说清目标、材料、格式和限制，不必先学工作流语法。</p></div>
+        <div class="node"><b>执行模式</b><small>DEFAULT / PLAN / ASK</small><p>默认模式执行；Plan 先规划；Ask 只回答，帮助控制自主程度。</p></div>
+        <div class="node"><b>过程可见</b><small>EXECUTION TIMELINE</small><p>对话区展示执行过程和输出，用户知道系统正在做什么。</p></div>
+        <div class="node"><b>结果验收区</b><small>FILES / PREVIEW / CHANGES / ARTIFACTS</small><p>把文件、网页预览、变更、产物和引用放到右侧统一核验。</p></div>
+      </div></div>
+      <div class="layer"><strong>3 产品应用域<br><span class="small">PRODUCT DOMAINS</span></strong><div class="nodes">
+        <div class="node"><b>办公内容生产</b><small>DOCUMENT / SLIDES / DATA / DESIGN</small><p>生成文档、表格、PPT、报告、图片和可视化。</p></div>
+        <div class="node"><b>研究与产品管理</b><small>RESEARCH / PRODUCT MANAGEMENT</small><p>检索资料、形成结论、做竞品分析和需求全流程交付。</p></div>
+        <div class="node"><b>代码与应用开发</b><small>CODE / WEBSITE / AGENT / SKILL / CI-CD</small><p>在仓库或工作空间中改代码、验证网页和开发 Agent / Skill。</p></div>
+        <div class="node"><b>团队项目与资料协作</b><small>PROJECT / LIBRARY / CO-WRITING</small><p>共享项目上下文、文件、评论、修订建议和多人编辑。</p></div>
+      </div></div>
+      <div class="layer"><strong>4 Agent 与流程编排<br><span class="small">AGENT ORCHESTRATION</span></strong><div class="nodes">
+        <div class="node inferred"><b>任务控制组件</b><small>TASK CONTROLLER · FUNCTIONAL NAME</small><p>维持规划、执行、等待确认、完成和失败等状态；内部名称未知。</p></div>
+        <div class="node"><b>专家 / 专家团</b><small>EXPERT / EXPERT TEAM</small><p>单专家提供专业方法；专家团由团长拆解并协调多专家并行执行。</p></div>
+        <div class="node"><b>项目任务</b><small>PROJECT TASK</small><p>自动继承项目指令、资料、专家、技能和连接器配置。</p></div>
+        <div class="node"><b>自动化运行</b><small>AUTOMATION RUN</small><p>按时间规则，用当前身份启动一次 Agent 任务并记录结果。</p></div>
+      </div></div>
+      <div class="layer"><strong>5 工具与外部服务<br><span class="small">TOOLS &amp; EXTERNAL SERVICES</span></strong><div class="nodes">
+        <div class="node"><b>技能脚本与工作流</b><small>SKILL / CLI</small><p>执行文件处理、数据分析、浏览器、金融查询等可复用动作。</p></div>
+        <div class="node"><b>标准连接协议</b><small>MCP · MODEL CONTEXT PROTOCOL</small><p>用标准接口把第三方数据和动作接入 AI 任务。</p></div>
+        <div class="node"><b>腾讯办公生态</b><small>DOCS / LEXIANG / MAIL / MEETING / WECOM</small><p>访问文档、知识库、邮箱、会议和即时通讯等办公系统。</p></div>
+        <div class="node"><b>外部开发与业务系统</b><small>GITHUB / TAPD / NOTION / SUPABASE</small><p>读取或改变代码、项目、知识和数据库对象。</p></div>
+      </div></div>
+      <div class="layer"><strong>6 模型接入与选择<br><span class="small">MODEL ACCESS &amp; SELECTION</span></strong><div class="nodes">
+        <div class="node"><b>Auto 自动选择</b><small>AUTO MODEL SELECTION</small><p>界面允许系统自动选模型；具体判断规则、回退和复现机制未公开。</p></div>
+        <div class="node"><b>内置多模型</b><small>HY3 / GLM / MINIMAX / KIMI / DEEPSEEK</small><p>用户可直接选择不同推理、多模态和代码模型；名单会随版本变化。</p></div>
+        <div class="node"><b>自定义第三方模型</b><small>CUSTOM MODEL / API</small><p>用户配置供应商、地址、API Key 和能力标记，费用由第三方承担。</p></div>
+        <div class="node"><b>本地模型</b><small>OLLAMA / LOCAL MODEL</small><p>可接本机模型，用于隐私、内网、离线或不消耗云端 Token 的场景。</p></div>
+      </div></div>
+      <div class="layer"><strong>7 上下文、记忆与运行数据<br><span class="small">CONTEXT, MEMORY &amp; DATA</span></strong><div class="nodes">
+        <div class="node"><b>用户 / 组织 / 权限</b><small>IDENTITY CONTEXT</small><p>决定能访问的项目、文件、连接器、模型和套餐额度。</p></div>
+        <div class="node"><b>任务 / 对话 / 状态</b><small>TASK / CONVERSATION / STATUS</small><p>保存目标、历史消息、执行步骤、工具结果和恢复位置。</p></div>
+        <div class="node"><b>项目公共配置</b><small>PROJECT CONTEXT</small><p>保存指令、成员、专家、技能、连接器和项目资产。</p></div>
+        <div class="node"><b>个人长期记忆</b><small>MEMORY CONTEXT</small><p>保存从历史会话提取的偏好和事实；仅本人可见并可管理。</p></div>
+      </div></div>
+      <div class="layer"><strong>8 知识、文件与产物<br><span class="small">KNOWLEDGE, FILES &amp; ARTIFACTS</span></strong><div class="nodes">
+        <div class="node"><b>任务工作空间</b><small>WORKSPACE FILES</small><p>本次任务读取、生成和修改的本地或任务目录文件。</p></div>
+        <div class="node"><b>项目资产库</b><small>PROJECT LIBRARY / RAG</small><p>团队资料集中存储，并以检索结果形式进入项目任务。</p></div>
+        <div class="node"><b>在线协作文档</b><small>MD / CSV / HTML</small><p>MD 承载内容、CSV 保存数据、HTML 负责呈现；权限与修改方式不同。</p></div>
+        <div class="node"><b>可交付产物</b><small>ARTIFACT</small><p>Word、PDF、Excel、PPT、网页、代码等用户可以实际使用的成果。</p></div>
+      </div></div>
+      <div class="layer"><strong>9 评测、安全与人工治理<br><span class="small">EVALUATION &amp; GOVERNANCE</span></strong><div class="nodes">
+        <div class="node"><b>默认权限与安全沙箱</b><small>DEFAULT PERMISSION / SANDBOX</small><p>低风险步骤继续执行，高风险路径、删除、脚本和网络动作要求确认。</p></div>
+        <div class="node"><b>用户确认与审阅</b><small>CONFIRMATION / REVIEW</small><p>MD 修订需接受后生效；外部写入和重要文件动作应由用户把关。</p></div>
+        <div class="node"><b>权限继承与审计</b><small>RBAC / AUDIT</small><p>人能看什么，Agent 才能看什么；企业版提供安全与审计能力。</p></div>
+        <div class="node unknown-node"><b>系统化质量评测</b><small>OFFLINE / ONLINE EVALUATION</small><p>页面未公开完整的模型、工具、引用和业务成功率评测体系。</p></div>
+      </div></div>
+      <div class="layer"><strong>10 基础设施、运营与计费<br><span class="small">INFRASTRUCTURE &amp; OPERATIONS</span></strong><div class="nodes">
+        <div class="node"><b>身份、授权与凭据</b><small>LOGIN / OAUTH / API KEY</small><p>识别用户并维护第三方授权；自定义模型 API Key 官方称只保存在本地。</p></div>
+        <div class="node inferred"><b>任务调度与并发控制</b><small>SCHEDULER / CONCURRENCY</small><p>自动化受频率、最大时长和并发限制；具体队列和服务未公开。</p></div>
+        <div class="node"><b>积分、坐席与账单</b><small>CREDIT / SEAT / BILLING</small><p>个人按套餐积分使用；企业按坐席订阅并集中管理用量。</p></div>
+        <div class="node"><b>企业部署与租户隔离</b><small>DEDICATED / PRIVATE DEPLOYMENT</small><p>企业专享网络、插件、实例、数据隔离，也提供私有化部署方案。</p></div>
+      </div></div>
+      <p class="muted">线型说明：绿色实线为页面或官方资料已确认；蓝色虚线为根据多个页面行为形成的合理推断；灰紫虚线为当前未知。没有把数据库、队列、云资源、内部 Agent 数量和 Auto 路由算法写成事实。</p>
+    </section>
+
+    <section id="state">
+      <h2>11｜任务状态、完成门与核心实体</h2>
+      <h3>任务状态机</h3>
+      <div class="state"><span>新建<br><small>输入目标</small></span><i>→</i><span>规划中<br><small>分析与拆解</small></span><i>→</i><span>进行中<br><small>模型 / 工具执行</small></span><i>⇄</i><span>待处理 / 待确认<br><small>缺信息或高风险动作</small></span><i>→</i><span>已完成<br><small>产物可查看</small></span><i>或</i><span>失败<br><small>可补充后继续</small></span><i>→</i><span>归档 / 删除<br><small>管理生命周期</small></span></div>
+      <div class="callout"><b>三个“完成”不能混在一起：</b>①模型或工具返回成功；②任务状态变成“已完成”且产物真实存在；③用户核验后，文件内容、外部动作和业务目标真的正确。WorkBuddy 已提供结果区和变更视图，但最终完成仍需要用户判断。</div>
+      <h3>核心数据实体</h3>
+      <div class="diagram">
+        <div class="diagram-row"><div class="box">User / Organization<br><small>用户 / 组织</small></div><span class="arrow">1:N</span><div class="box">Project<br><small>项目配置与成员</small></div><span class="arrow">1:N</span><div class="box">Task / Conversation<br><small>任务与对话</small></div><span class="arrow">1:1</span><div class="box">Workspace<br><small>文件工作空间</small></div></div>
+        <div class="divider"></div>
+        <div class="diagram-row"><div class="box">Task</div><span class="arrow">N:M</span><div class="box">Expert / Skill / Connector</div><span class="arrow">产生</span><div class="box">ToolCall / ModelCall<br><small>工具 / 模型调用</small></div><span class="arrow">产生</span><div class="box">Artifact / Change<br><small>产物 / 变更</small></div></div>
+        <div class="divider"></div>
+        <div class="diagram-row"><div class="box">Project</div><span class="arrow">1:1</span><div class="box">Asset Library<br><small>项目资产库</small></div><span class="arrow">检索注入</span><div class="box">Task Context<br><small>任务上下文</small></div><span class="arrow">记录</span><div class="box">Usage / Audit<br><small>用量 / 审计</small></div></div>
+      </div>
+    </section>
+
+    <section id="governance">
+      <h2>12｜评测、安全、隐私与责任</h2>
+      <div class="risk-matrix">
+        <div class="head">等级</div><div class="head">风险为什么会发生</div><div class="head">用户能看懂的治理要求</div>
+        <div class="p0"><b>P0</b></div><div>完全访问权限会跳过文件、删除、脚本和外部程序的二次确认；一旦任务理解错路径，可能直接影响电脑资料。</div><div>默认保持安全沙箱；重要任务放到独立文件夹并使用副本；确认弹窗必须展示动作、路径、范围和理由。</div>
+        <div class="p0"><b>P0</b></div><div>连接器以用户身份访问邮箱、文档、知识库和业务系统；“AI 说已发送”不等于外部系统真的写入正确对象。</div><div>外部写入前显示目标对象、内容和权限；执行后回读真实业务状态；使用幂等键避免重试造成重复发送。</div>
+        <div class="p0"><b>P0</b></div><div>自动化在无人值守时调用模型、技能和连接器，可能写文件、外发数据或持续消耗积分。</div><div>先手动试跑，再低频启用；设置预算、最大时长、允许工具清单、失败熔断和可追溯日志；资金动作不应无人值守。</div>
+        <div class="p1"><b>P1</b></div><div>项目资料以 RAG 进入任务，但检索结果可能过期、漏召回或与其他来源冲突。</div><div>产物显示来源文件、版本和引用位置；无答案时明确说不知道；项目材料变更后标记下游结果可能失效。</div>
+        <div class="p1"><b>P1</b></div><div>个人记忆由模型从会话自动抽取，可能把临时信息或概括错误当成长期事实。</div><div>重要记忆展示来源和更新时间；用户可纠正、删除和关闭；高风险判断前重新向用户确认。</div>
+        <div class="p1"><b>P1</b></div><div>第三方 Skill 可能包含提示词注入、越权访问或后门脚本；复杂 Skill 也会放大积分消耗。</div><div>安装前看来源、权限和脚本；默认只启用当前任务需要的技能；先在小范围和隔离目录测试。</div>
+        <div class="p1"><b>P1</b></div><div>Auto 模型选择和专家团并行会影响质量、成本和可复现性，但路由逻辑与回退条件没有公开。</div><div>产物记录模型、版本、倍率、专家和提示词版本；执行前估价；失败重试不重复扣费或重复动作。</div>
+        <div class="p2"><b>P2</b></div><div>分享任务或产物会生成公开链接；取消分享前，获得链接的人可能继续访问。</div><div>分享前展示公开范围和敏感信息扫描；支持有效期、密码、水印、访问日志和一键撤销。</div>
+      </div>
+      <h3>最小评测矩阵</h3>
+      <div class="scroll"><table><thead><tr><th>层</th><th>检查什么</th><th>典型坏案例</th><th>完成门</th></tr></thead><tbody>
+        <tr><td>任务理解</td><td>目标、范围、输出格式和限制是否完整</td><td>把“分析”理解成“直接修改”；漏掉截止时间</td><td>Plan 模式或执行前摘要得到用户确认</td></tr>
+        <tr><td>工具与连接器</td><td>参数、权限、真实结果、幂等与错误</td><td>邮件发错人；文档写错空间；重复创建任务</td><td>外部对象回读成功，目标和内容一致</td></tr>
+        <tr><td>知识与研究</td><td>来源、时效、引用忠实度和冲突</td><td>把营销材料当事实；引用无法支持结论</td><td>关键结论可回到原始来源和日期</td></tr>
+        <tr><td>文件产物</td><td>内容、结构、公式、版式、可编辑性</td><td>PPT 文字溢出；Excel 公式错误；PDF 丢页</td><td>打开、渲染、测试并人工抽查</td></tr>
+        <tr><td>用户目标</td><td>产物是否能真正推进工作</td><td>报告很长但不能决策；代码生成但无法运行</td><td>用户按真实任务标准验收，而不是只看“已完成”</td></tr>
+      </tbody></table></div>
+    </section>
+
+    <section id="business">
+      <h2>13｜商业化、额度与企业能力</h2>
+      <div class="grid two">
+        <div class="card"><span class="tag fact">个人版</span><h4>免费入口 + 积分和项目上限</h4><ul><li>体验版：页面显示限时免费，每月 500 积分、5 个项目，并有自动任务和协作人数上限。</li><li>标准 / 高级 / 旗舰：提供更多积分、自动任务、项目和成员额度，并开放全部模型选择。</li><li>页面在 2026-08-19 同时展示优惠价 70 / 140 / 700 元每月与原价 99 / 199 / 999 元每月；具体对应月付、连续包月或包年条件，下单前必须复核。</li><li>页面同时出现“每日 0 积分免费额度”动态文案，疑似当前活动字段或展示异常，不能当成稳定权益。</li></ul></div>
+        <div class="card"><span class="tag fact">企业版</span><h4>按坐席订阅 + 管理与隔离</h4><ul><li>旗舰版：页面显示 198 元 / 人 / 月，1 坐席起购，每坐席每月基础 2000 + 赠送 2000 Credit。</li><li>专享版：页面显示 316 元 / 人 / 月，100 坐席起购，强调单租户专享能力。</li><li>企业特性：第三方登录、组织、统一订阅、成员用量、企业 Skill / 专家 / 智能体 / 模型、安全审计、OpenAPI。</li><li>专享网络、企业插件、专属实例、数据租户隔离，并提供私有化部署咨询。</li></ul></div>
+      </div>
+      <div class="callout" style="margin-top:13px"><b>成本理解：</b>积分不是“一个任务固定扣多少”。复杂任务、专家团、多模型、多轮工具、自动化和第三方模型都会改变成本。连接器本身读写不消耗 WorkBuddy 积分，但系统理解外部数据会消耗积分；自定义模型的 Token 或订阅费用由用户向第三方支付。</div>
+      <h3>增长与留存循环</h3>
+      <div class="diagram"><div class="diagram-row"><div class="box">一句话开始<br><small>低学习成本</small></div><span class="arrow">→</span><div class="box">第一次拿到真实文件<br><small>首个价值时刻</small></div><span class="arrow">→</span><div class="box">安装专家 / 技能 / 连接器<br><small>能力扩展</small></div><span class="arrow">→</span><div class="box">项目沉淀规则与资料<br><small>团队复用</small></div><span class="arrow">→</span><div class="box">自动化重复执行<br><small>持续使用</small></div><span class="arrow">↺</span><div class="box inferred">更多积分 / 坐席 / 企业能力</div></div></div>
+    </section>
+
+    <section id="tobe">
+      <h2>14｜As-Is 与 To-Be</h2>
+      <div class="grid two">
+        <div class="card"><span class="tag fact">As-Is｜已经确认的现状</span><ul><li>以任务为执行单位，以项目为团队上下文单位。</li><li>默认、Plan、Ask 三种模式控制自主程度。</li><li>专家、专家团、技能和连接器具有清楚的产品定义。</li><li>项目资料通过 RAG 注入任务，并继承用户权限。</li><li>右侧结果区同时展示文件、网页、变更、产物和引用。</li><li>默认权限在敏感动作前确认；支持完全访问但风险高。</li><li>个人记忆可管理；自动化可定时无人值守执行。</li><li>个人订阅与企业坐席、专享、私有化商业模式并存。</li></ul></div>
+        <div class="card"><span class="tag unknown">As-Is｜仍然未知</span><ul><li>Auto 模型路由的判断、回退和成本优化逻辑。</li><li>内部真实 Agent 数量、消息协议、队列和调度服务。</li><li>RAG 的分块、召回、排序、冲突和无答案阈值。</li><li>工具调用是否统一使用幂等键与失败补偿。</li><li>分享链接的默认有效期、访问日志与企业 DLP 细节。</li><li>模型 / 工具 / 任务 / 用户目标的线上评测指标。</li><li>Web、桌面、小程序和移动端的功能与状态一致性。</li><li>自动化失败、积分不足或第三方中断后的补偿策略。</li></ul></div>
+      </div>
+      <h3>To-Be：最值得优先补强的设计</h3>
+      <div class="grid">
+        <div class="card"><span class="tag suggest">建议设计 P0</span><h4>统一完成门</h4><p>只有“工具成功 + 真实业务对象回读 + 产物存在 + 必要评测通过”后，任务才能显示完成。解决 Agent 自述完成与真实结果不一致。</p></div>
+        <div class="card"><span class="tag suggest">建议设计 P0</span><h4>外部动作预览与幂等</h4><p>发送、创建、删除、发布前显示目标和参数；为重试绑定幂等键，避免重复发邮件、重复建任务或重复扣费。</p></div>
+        <div class="card"><span class="tag suggest">建议设计 P0</span><h4>自动化安全预算</h4><p>每个自动任务设置积分上限、工具白名单、最大时长、数据外发范围、失败熔断和人工接管条件。</p></div>
+        <div class="card"><span class="tag suggest">建议设计 P1</span><h4>结果级证据与版本</h4><p>报告句子、待办和结论能回跳到来源文件、段落、版本和时间；上游材料变化后提醒下游产物可能失效。</p></div>
+        <div class="card"><span class="tag suggest">建议设计 P1</span><h4>可解释模型路由</h4><p>Auto 在执行前说明为什么选这个模型、预计倍率、是否支持图片 / 工具、失败如何回退，并把结果写入任务元数据。</p></div>
+        <div class="card"><span class="tag suggest">建议设计 P1</span><h4>权限与数据外发清单</h4><p>在任务开始前生成一张清单：会读哪些本地目录、调用哪些连接器、把哪些数据发给哪个模型或第三方。</p></div>
+      </div>
+    </section>
+
+    <section id="glossary">
+      <h2>15｜术语翻译：看到英文时应该怎么理解</h2>
+      <div class="scroll"><table><thead><tr><th>术语</th><th>中文</th><th>在 WorkBuddy 里是什么意思</th><th>不要误解成</th></tr></thead><tbody>
+        <tr><td>Agent</td><td>智能体 / 能执行任务的 AI 角色</td><td>会基于目标、上下文、模型和工具推进多步任务</td><td>不是一定拥有系统权限，也不是持证专业人士</td></tr>
+        <tr><td>Expert</td><td>专家</td><td>用特定人设、方法论和工具链完成任务</td><td>不是一个新的基础模型</td></tr>
+        <tr><td>Skill</td><td>技能</td><td>封装脚本和工作流，让 AI 执行某类动作</td><td>不是只有一段提示词</td></tr>
+        <tr><td>Connector</td><td>连接器</td><td>连接邮箱、文档、知识库、项目系统等外部服务</td><td>不是默认就拥有第三方全部权限</td></tr>
+        <tr><td>MCP</td><td>模型上下文协议</td><td>让 AI 用统一方式发现并调用外部工具和数据</td><td>不是模型，也不是知识库本身</td></tr>
+        <tr><td>CLI</td><td>命令行接口</td><td>通过命令运行本地脚本或外部程序</td><td>不是普通聊天文字，可能真正改变电脑状态</td></tr>
+        <tr><td>RAG</td><td>检索增强生成</td><td>先从项目资料中找相关片段，再让模型基于这些材料回答</td><td>不是模型已经永久学会这些资料</td></tr>
+        <tr><td>Context</td><td>上下文</td><td>当前任务能参考的目标、对话、文件、项目、记忆、权限和工具结果</td><td>不是所有历史数据都会无限加入</td></tr>
+        <tr><td>Memory</td><td>长期记忆</td><td>从历史会话提取、供未来任务参考的个人事实与偏好</td><td>不是绝对正确的个人档案</td></tr>
+        <tr><td>Workspace</td><td>工作空间</td><td>任务主要读取和保存文件的目录</td><td>不是整个电脑都可以随意访问</td></tr>
+        <tr><td>Artifact</td><td>产物 / 交付物</td><td>Word、Excel、PPT、网页、代码等可以实际使用的结果</td><td>不是 Agent 说“已经完成”的一句话</td></tr>
+        <tr><td>Sandbox</td><td>安全沙箱</td><td>限制任务的文件、命令和网络操作，在高风险动作前要求确认</td><td>不是绝对不会出错，也不能替代备份</td></tr>
+        <tr><td>OAuth</td><td>第三方授权协议</td><td>用户允许 WorkBuddy 在限定范围内代表自己访问外部服务</td><td>不是把账号密码直接交给 WorkBuddy</td></tr>
+        <tr><td>API Key / Token</td><td>接口密钥 / 访问令牌</td><td>证明调用者身份并关联第三方权限或费用</td><td>不是可以公开分享的普通配置</td></tr>
+        <tr><td>Credit</td><td>积分 / 用量单位</td><td>WorkBuddy 计算模型和 Agent 任务消耗的商业单位</td><td>不等同于固定数量的模型 Token</td></tr>
+        <tr><td>RBAC</td><td>基于角色的权限控制</td><td>按查看、编辑、管理等角色决定人和 Agent 能访问什么</td><td>不是“加入项目后什么都能看”</td></tr>
+        <tr><td>Auto</td><td>自动模型选择</td><td>由系统为任务选择模型；当前具体路由规则未公开</td><td>不代表永远选质量最高或成本最低的模型</td></tr>
+      </tbody></table></div>
+    </section>
+
+    <section id="trace">
+      <h2>16｜证据追溯与未知问题</h2>
+      <h3>证据结论</h3>
+      <div class="scroll"><table><thead><tr><th>编号</th><th>等级</th><th>结论</th><th>来源</th></tr></thead><tbody>
+        <tr><td>E01</td><td><span class="tag fact">已确认</span></td><td>登录后首页提供日常办公、代码开发、场景入口、模型、更多操作和结果右栏。</td><td>S01 登录后 Web 工作台</td></tr>
+        <tr><td>E02</td><td><span class="tag fact">已确认</span></td><td>项目支持多人协同和模板，官方定义项目会自动注入指令、资料、专家、技能和连接器。</td><td>S02；O04 项目文档</td></tr>
+        <tr><td>E03</td><td><span class="tag fact">已确认</span></td><td>专家是角色与方法论；专家团由团长拆解并协调多专家。</td><td>S03；O05 专家文档</td></tr>
+        <tr><td>E04</td><td><span class="tag fact">已确认</span></td><td>Skill 封装可执行脚本与工作流，可导入、查找、创建、启停和卸载。</td><td>S04；O05 技能文档</td></tr>
+        <tr><td>E05</td><td><span class="tag fact">已确认</span></td><td>连接器以 MCP + CLI 或 Skill + CLI 接入第三方，逐个授权并沿用用户权限。</td><td>S05；O05 连接器文档</td></tr>
+        <tr><td>E06</td><td><span class="tag fact">已确认</span></td><td>任务支持默认、Plan、Ask 模式；输入框可添加文件、专家、技能和连接器。</td><td>S06 登录后控件</td></tr>
+        <tr><td>E07</td><td><span class="tag fact">已确认</span></td><td>界面提供 Auto 和多种显式模型；官方文档支持内置、自定义和本地模型。</td><td>S06；O05 模型文档</td></tr>
+        <tr><td>E08</td><td><span class="tag fact">已确认</span></td><td>任务绑定工作空间、对话和结果区；状态包括规划中、进行中、待处理、完成、失败和归档。</td><td>O03 任务与结果文档</td></tr>
+        <tr><td>E09</td><td><span class="tag fact">已确认</span></td><td>项目资料库内容以 RAG 形式进入任务上下文，Agent 使用与当前用户相同的访问权限。</td><td>O04 项目与多人协作文档</td></tr>
+        <tr><td>E10</td><td><span class="tag fact">已确认</span></td><td>默认权限对敏感路径、重要删除、脚本、外部程序和网络动作设置确认；完全访问会关闭二次确认。</td><td>O06 权限与沙箱文档</td></tr>
+        <tr><td>E11</td><td><span class="tag fact">已确认</span></td><td>记忆每晚从会话提取事实与偏好，仅本人可见，可编辑、删除、关闭和导入。</td><td>O06 记忆文档</td></tr>
+        <tr><td>E12</td><td><span class="tag fact">已确认</span></td><td>自动化按时间规则以当前身份启动 Agent，能调用模型、技能和连接器并产生积分与数据共享。</td><td>O06 自动化文档</td></tr>
+        <tr><td>E13</td><td><span class="tag fact">已确认</span></td><td>个人版按积分、项目、自动任务和成员额度分层；企业版按坐席提供组织、审计、OpenAPI 和隔离。</td><td>O02 定价页，查看日期 2026-08-19</td></tr>
+        <tr><td>E14</td><td><span class="tag infer">合理推断</span></td><td>产品内部需要任务控制、上下文组装、模型 / 工具调用与结果组装组件，但具体服务名和部署不可见。</td><td>E01 E02 E06 E08 E12 的行为链</td></tr>
+      </tbody></table></div>
+      <h3>下一轮最值得验证的问题</h3>
+      <div class="grid">
+        <div class="card"><h4>1 Auto 到底怎么选模型</h4><p>是否根据任务类型、上下文长度、图片、工具能力、成本、延迟和失败率动态路由？用户能否复现？</p></div>
+        <div class="card"><h4>2 工具成功如何变成业务完成</h4><p>连接器执行后是否强制回读外部对象？失败重试是否幂等？任务“完成”依据是什么？</p></div>
+        <div class="card"><h4>3 RAG 如何处理无答案和冲突</h4><p>项目资料的分块、排序、版本、权限、引用、过期和冲突规则是什么？</p></div>
+        <div class="card"><h4>4 自动化失控时怎么停</h4><p>积分不足、第三方异常、任务超时、重复触发或用户离线时，如何暂停、补偿和通知？</p></div>
+        <div class="card"><h4>5 多 Agent 如何交接</h4><p>专家团共享哪些上下文？如何避免重复工作？团长用什么完成门整合结果？</p></div>
+        <div class="card"><h4>6 跨端状态是否一致</h4><p>Web、桌面、小程序、移动端和 IM 助理看到的任务、文件、权限和自动化状态是否同步？</p></div>
+      </div>
+      <h3>官方来源</h3>
+      <ol class="source-list">
+        <li><a href="https://www.workbuddy.cn/" target="_blank" rel="noopener">WorkBuddy 官方首页</a>：产品定位、公开任务演示、腾讯生态（查看于 2026-08-19）。</li>
+        <li><a href="https://www.workbuddy.cn/pricing/" target="_blank" rel="noopener">WorkBuddy 定价</a>：个人与企业套餐、积分、项目、坐席和企业能力（查看于 2026-08-19）。</li>
+        <li><a href="https://www.workbuddy.cn/docs/workbuddy/Overview" target="_blank" rel="noopener">WorkBuddy 官方文档总览</a>：功能目录与核心定位。</li>
+        <li><a href="https://www.workbuddy.cn/docs/workbuddy/Create-Task" target="_blank" rel="noopener">创建任务</a>：目标、工作空间、上下文和任务创建。</li>
+        <li><a href="https://www.workbuddy.cn/docs/workbuddy/Task-Management" target="_blank" rel="noopener">任务管理</a>：任务状态、恢复、归档与工作空间。</li>
+        <li><a href="https://www.workbuddy.cn/docs/workbuddy/Results" target="_blank" rel="noopener">结果查看</a>：文件、浏览器、变更和产物。</li>
+        <li><a href="https://www.workbuddy.cn/docs/workbuddy/From-Beginner-to-Expert-Guide/Function-Description/Project" target="_blank" rel="noopener">项目</a>：项目配置、任务、资产、RAG、授权和流转。</li>
+        <li><a href="https://www.workbuddy.cn/docs/workbuddy/From-Beginner-to-Expert-Guide/Function-Description/Expert-Center" target="_blank" rel="noopener">专家</a>：专家、专家团和权限边界。</li>
+        <li><a href="https://www.workbuddy.cn/docs/workbuddy/From-Beginner-to-Expert-Guide/Function-Description/Skills-Market" target="_blank" rel="noopener">技能</a>：脚本工作流、安装与安全。</li>
+        <li><a href="https://www.workbuddy.cn/docs/workbuddy/From-Beginner-to-Expert-Guide/Function-Description/Connector" target="_blank" rel="noopener">连接器</a>：MCP / CLI、授权、读写与第三方共享。</li>
+        <li><a href="https://www.workbuddy.cn/docs/workbuddy/From-Beginner-to-Expert-Guide/Function-Description/Permission-Modes" target="_blank" rel="noopener">默认权限与安全沙箱</a>：工作空间、高风险确认和完全访问。</li>
+        <li><a href="https://www.workbuddy.cn/docs/workbuddy/From-Beginner-to-Expert-Guide/Function-Description/Memory" target="_blank" rel="noopener">记忆</a>：抽取、使用、管理与隐私。</li>
+        <li><a href="https://www.workbuddy.cn/docs/workbuddy/From-Beginner-to-Expert-Guide/Function-Description/Automation-Guide" target="_blank" rel="noopener">自动化</a>：定时配置、凭据、积分与安全。</li>
+        <li><a href="https://www.workbuddy.cn/docs/workbuddy/From-Beginner-to-Expert-Guide/Function-Description/Model" target="_blank" rel="noopener">模型配置</a>：内置、自定义、本地模型和密钥边界。</li>
+        <li><a href="https://www.workbuddy.cn/docs/workbuddy/From-Beginner-to-Expert-Guide/Function-Description/Library/Collaboration" target="_blank" rel="noopener">多人多 Agent 协作</a>：团队空间权限、修订建议和文档协同。</li>
+      </ol>
+    </section>
+  </main>
+  <footer>
+    <p>本报告是基于 WorkBuddy 登录后可见页面、公开官网、定价页和官方文档整理的功能等价产品分析，不代表腾讯官方内部架构说明。报告没有读取用户私人任务内容，也没有触发任务、上传文件、连接外部服务、创建自动化、购买或修改账号数据。</p>
+  </footer>
+</body>
+</html>

@@ -233,6 +233,7 @@ python3 skills/reverse-ai-product-architecture/scripts/inventory_screenshots.py 
 ## 示例报告
 
 - [通义听悟产品拆解](examples/通义听悟产品拆解.html)：基于通义听悟 Web 页面与阿里云官方资料，展示用户旅程、AI 能力契约、工作流、上下文与数据、商业化、风险以及 As-Is/To-Be 架构。
+- [WorkBuddy 产品拆解](examples/WorkBuddy产品拆解.html)：基于登录后 Web 工作台、官网、定价页与官方文档，展示任务与项目、专家/技能/连接器、Agent 工作流、上下文/记忆/RAG、十层架构、安全治理、商业化及 As-Is/To-Be。
 
 ## 校验
 
