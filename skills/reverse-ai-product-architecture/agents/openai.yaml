@@ -1,0 +1,4 @@
+interface:
+  display_name: "AI 产品架构逆向分析"
+  short_description: "基于页面证据还原用户旅程、Agent 契约与产品全景架构"
+  default_prompt: "使用 $reverse-ai-product-architecture 基于这些产品页面截图完成证据化的用户旅程、Agent 契约与产品架构拆解。"

@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>{{PRODUCT_NAME}} 产品架构逆向分析</title>
+  <style>
+    :root{--bg:#f4f1e8;--paper:#fffdf7;--ink:#17201c;--muted:#68706a;--line:#d7d4c8;--fact:#147d64;--infer:#4267a8;--suggest:#c26d24;--unknown:#7b7482;--risk:#b8473f}
+    *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.65 Inter,"PingFang SC",sans-serif}header{background:#17231d;color:white;padding:48px max(20px,calc((100vw - 1200px)/2));border-bottom:6px solid #ef7c45}h1{font-size:clamp(34px,5vw,60px);line-height:1;margin:.2em 0}main{max-width:1200px;margin:auto;padding:30px 20px 70px}section{margin:0 0 48px}h2{border-bottom:2px solid;padding-bottom:8px}.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}.card{background:var(--paper);border:1px solid var(--line);padding:15px}.tag{display:inline-block;border-radius:999px;padding:3px 7px;font:700 11px ui-monospace,monospace}.fact{color:var(--fact);background:#e8f5ef}.infer{color:var(--infer);background:#edf3fc}.suggest{color:var(--suggest);background:#fff2e5}.unknown{color:var(--unknown);background:#f2eef6}.lane{display:grid;grid-template-columns:130px repeat(4,1fr);overflow:auto;background:white;border:1px solid var(--line)}.lane>*{padding:10px;border-right:1px solid var(--line);border-bottom:1px solid var(--line);min-width:160px}.lane b{background:#1f2d25;color:white}.layer{display:grid;grid-template-columns:170px 1fr;background:white;border:1px solid var(--line);margin:8px 0}.layer>strong{background:#1f2d25;color:white;padding:14px}.nodes{display:flex;gap:8px;flex-wrap:wrap;padding:12px}.node{border:1px solid var(--fact);padding:7px 9px}.node.inferred{border-style:dashed;border-color:var(--infer)}.node.suggested{border:2px dotted var(--suggest)}table{border-collapse:collapse;width:100%;min-width:850px}th,td{border:1px solid var(--line);padding:8px;text-align:left;vertical-align:top}th{background:#1f2d25;color:white}.scroll{overflow:auto}@media(max-width:700px){.grid{grid-template-columns:1fr}.layer{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+  <header><small>AI PRODUCT REVERSE ANALYSIS</small><h1>{{PRODUCT_NAME}}</h1><p>{{ONE_SENTENCE_ARCHITECTURE}}</p></header>
+  <main>
+    <section><h2>证据范围</h2><p><span class="tag fact">【已确认】</span> <span class="tag infer">【合理推断】</span> <span class="tag suggest">【建议设计】</span> <span class="tag unknown">【未知】</span></p><div class="grid"><div class="card">{{SCOPE}}</div><div class="card">{{SOURCES}}</div><div class="card">{{GAPS}}</div></div></section>
+    <section><h2>端到端五流</h2><div class="lane"><b>流 / 阶段</b><b>输入</b><b>规划</b><b>生成</b><b>交付</b><strong>用户</strong><div>{{USER_1}}</div><div>{{USER_2}}</div><div>{{USER_3}}</div><div>{{USER_4}}</div><strong>Agent</strong><div>{{AGENT_1}}</div><div>{{AGENT_2}}</div><div>{{AGENT_3}}</div><div>{{AGENT_4}}</div><strong>工具</strong><div>{{TOOL_1}}</div><div>{{TOOL_2}}</div><div>{{TOOL_3}}</div><div>{{TOOL_4}}</div><strong>上下文</strong><div>{{CTX_1}}</div><div>{{CTX_2}}</div><div>{{CTX_3}}</div><div>{{CTX_4}}</div><strong>资产</strong><div>{{ASSET_1}}</div><div>{{ASSET_2}}</div><div>{{ASSET_3}}</div><div>{{ASSET_4}}</div></div></section>
+    <section><h2>产品分层架构</h2><div class="layer"><strong>用户与工作台</strong><div class="nodes">{{LAYER_UI}}</div></div><div class="layer"><strong>Agent 与编排</strong><div class="nodes">{{LAYER_AGENT}}</div></div><div class="layer"><strong>工具与模型</strong><div class="nodes">{{LAYER_TOOL}}</div></div><div class="layer"><strong>上下文与资产</strong><div class="nodes">{{LAYER_DATA}}</div></div><div class="layer"><strong>知识与治理</strong><div class="nodes">{{LAYER_GOV}}</div></div></section>
+    <section><h2>证据追溯</h2><div class="scroll"><table><thead><tr><th>组件</th><th>结论</th><th>等级</th><th>证据</th><th>未知</th></tr></thead><tbody>{{TRACE_ROWS}}</tbody></table></div></section>
+    <section><h2>As-Is / To-Be 与风险</h2><div class="grid"><div class="card">{{AS_IS}}</div><div class="card">{{TO_BE}}</div><div class="card">{{RISKS}}</div></div></section>
+  </main>
+</body>
+</html>
