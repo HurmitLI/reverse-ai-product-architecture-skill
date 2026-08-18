@@ -2,6 +2,8 @@
 
 一套适用于所有 AI 产品品类的“证据优先”产品拆解 Skill。
 
+如果只拆解生图、生视频、AI 音频、数字人或多模态创作工作台，可使用更聚焦的 [AIGC 产品拆解 Skill](https://github.com/HurmitLI/reverse-aigc-product-architecture-skill)。两个 Skill 名称不同，可以同时安装。
+
 它不局限于 OiiOii、LibTV 等生图/视频产品，也适用于：
 
 - 蚂蚁阿福这类医疗与健康 AI
