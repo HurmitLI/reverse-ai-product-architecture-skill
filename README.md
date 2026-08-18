@@ -230,6 +230,10 @@ python3 skills/reverse-ai-product-architecture/scripts/inventory_screenshots.py 
 
 `assets/report-template.html` 提供四级证据配色、端到端六流、AI 产品分层架构、证据追溯和 As-Is/To-Be/风险区域。模板可直接替换语义占位符，也可以只复用视觉语言。
 
+## 示例报告
+
+- [通义听悟产品拆解](examples/通义听悟产品拆解.html)：基于通义听悟 Web 页面与阿里云官方资料，展示用户旅程、AI 能力契约、工作流、上下文与数据、商业化、风险以及 As-Is/To-Be 架构。
+
 ## 校验
 
 校验 Skill：

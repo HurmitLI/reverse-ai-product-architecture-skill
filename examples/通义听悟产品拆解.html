@@ -1,0 +1,363 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="基于通义听悟 Web 页面与阿里云官方资料的证据化产品架构拆解">
+  <title>通义听悟｜AI 产品架构逆向分析</title>
+  <style>
+    :root{
+      --bg:#f4f1e8;--paper:#fffdf7;--ink:#17201c;--muted:#66706a;--line:#d8d4c7;
+      --deep:#17231d;--brand:#ef6f3d;--fact:#147d64;--infer:#4267a8;--suggest:#b8611e;
+      --unknown:#736b7a;--risk:#b6433b;--soft:#ece8dc;--blue:#edf3fc;--green:#e8f5ef;
+    }
+    *{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.68 Inter,"PingFang SC","Microsoft YaHei",sans-serif}
+    a{color:#155e75;text-decoration-thickness:1px;text-underline-offset:3px}a:hover{color:var(--brand)}
+    header{background:linear-gradient(118deg,#17231d 0%,#233c2d 67%,#305242 100%);color:white;padding:54px max(22px,calc((100vw - 1240px)/2)) 46px;border-bottom:7px solid var(--brand)}
+    header small{font:700 12px/1 ui-monospace,SFMono-Regular,monospace;letter-spacing:.16em;color:#ffd2bd}
+    header h1{font-size:clamp(38px,6vw,70px);line-height:1;margin:.22em 0 .15em;letter-spacing:-.04em}
+    header .lead{max-width:920px;font-size:clamp(17px,2vw,22px);line-height:1.55;margin:0 0 22px;color:#f6f2e8}
+    .meta{display:flex;gap:8px;flex-wrap:wrap}.chip{display:inline-block;border:1px solid #ffffff4a;border-radius:999px;padding:5px 9px;font-size:12px;background:#ffffff12}
+    nav{position:sticky;top:0;z-index:8;background:#fffdf3ef;backdrop-filter:blur(12px);border-bottom:1px solid var(--line);overflow:auto;white-space:nowrap;padding:10px max(20px,calc((100vw - 1240px)/2))}
+    nav a{display:inline-block;margin-right:18px;color:#2c3b33;font-size:12px;font-weight:700;text-decoration:none}
+    main{max-width:1240px;margin:auto;padding:34px 20px 78px}section{margin:0 0 54px;scroll-margin-top:60px}
+    h2{font-size:27px;line-height:1.25;margin:0 0 18px;padding-bottom:10px;border-bottom:2px solid #2d3d34}h3{font-size:18px;margin:22px 0 10px}h4{margin:0 0 6px;font-size:15px}
+    p{margin:7px 0}.muted{color:var(--muted)}.small{font-size:12px}.mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+    .grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:13px}.grid.two{grid-template-columns:repeat(2,minmax(0,1fr))}.grid.four{grid-template-columns:repeat(4,minmax(0,1fr))}
+    .card{background:var(--paper);border:1px solid var(--line);padding:16px;box-shadow:0 1px 0 #ffffff inset}.card.accent{border-top:4px solid var(--brand)}
+    .metric{font-size:28px;font-weight:800;line-height:1.05}.eyebrow{font:700 11px/1.2 ui-monospace,monospace;letter-spacing:.08em;color:var(--muted);text-transform:uppercase}
+    .tag{display:inline-block;border-radius:999px;padding:3px 7px;font:700 11px/1.2 ui-monospace,monospace;white-space:nowrap}.fact{color:var(--fact);background:var(--green)}.infer{color:var(--infer);background:var(--blue)}.suggest{color:var(--suggest);background:#fff0e1}.unknown{color:var(--unknown);background:#f1edf4}.risk{color:var(--risk);background:#fdebea}
+    .verdict{background:#fff8eb;border:1px solid #e2c99d;border-left:6px solid var(--brand);padding:17px 19px;font-size:16px}.verdict strong{font-size:18px}
+    .scroll{overflow:auto;border:1px solid var(--line);background:white}table{border-collapse:collapse;width:100%;min-width:920px}th,td{border-right:1px solid var(--line);border-bottom:1px solid var(--line);padding:9px;text-align:left;vertical-align:top}th{position:sticky;top:0;background:var(--deep);color:white;font-size:12px}tr:last-child td{border-bottom:0}
+    .flow{display:grid;grid-template-columns:repeat(6,minmax(130px,1fr));gap:9px;overflow:auto;padding:2px}.step{position:relative;background:var(--paper);border:1px solid var(--line);padding:14px;min-height:118px}.step:not(:last-child):after{content:"→";position:absolute;right:-9px;top:46%;z-index:2;background:var(--bg);color:var(--brand);font-weight:900}.step b{display:block;margin-bottom:5px}.step .n{color:var(--brand);font:800 12px ui-monospace,monospace}
+    .lane{display:grid;grid-template-columns:135px repeat(4,minmax(185px,1fr));overflow:auto;background:white;border:1px solid var(--line)}.lane>*{padding:10px;border-right:1px solid var(--line);border-bottom:1px solid var(--line);min-width:150px}.lane b{background:var(--deep);color:white}.lane strong{background:#e8ece7}
+    .layer{display:grid;grid-template-columns:185px 1fr;background:white;border:1px solid var(--line);margin:8px 0}.layer>strong{background:var(--deep);color:white;padding:14px}.nodes{display:flex;gap:8px;flex-wrap:wrap;padding:12px}.node{border:1px solid var(--fact);background:#fbfffd;padding:7px 9px;border-radius:3px}.node.inferred{border-style:dashed;border-color:var(--infer);background:#f7faff}.node.suggested{border:2px dotted var(--suggest);background:#fffaf4}.node.unknown-node{border-style:dashed;border-color:var(--unknown);background:#faf8fb}
+    .diagram{background:#fff;border:1px solid var(--line);padding:18px}.diagram-row{display:flex;align-items:stretch;justify-content:center;gap:9px;flex-wrap:wrap}.box{min-width:145px;max-width:210px;flex:1;padding:12px;border:1px solid #4b6f5b;background:#f8fcf9;text-align:center}.box.inferred{border-style:dashed;border-color:var(--infer);background:#f6f9ff}.arrow{align-self:center;font-size:22px;color:var(--brand);font-weight:900}.divider{height:1px;background:var(--line);margin:16px 0}
+    .state{display:flex;gap:7px;align-items:center;overflow:auto;padding:4px 0 10px}.state span{min-width:120px;padding:9px;border:1px solid var(--line);background:white;text-align:center}.state i{font-style:normal;color:var(--brand);font-weight:900}
+    .risk-matrix{display:grid;grid-template-columns:90px 1fr 1fr;gap:1px;background:var(--line);border:1px solid var(--line)}.risk-matrix>*{background:var(--paper);padding:12px}.risk-matrix .head{background:var(--deep);color:white;font-weight:700}.p0{border-left:5px solid #a62921}.p1{border-left:5px solid #d27a2d}.p2{border-left:5px solid #b6a045}
+    ul{margin:7px 0;padding-left:20px}li{margin:4px 0}.callout{padding:12px 14px;background:#eff5f1;border-left:4px solid var(--fact)}
+    .source-list{columns:2;column-gap:28px}.source-list li{break-inside:avoid;margin-bottom:8px}
+    footer{max-width:1240px;margin:auto;padding:0 20px 42px;color:var(--muted);font-size:12px}
+    @media(max-width:900px){.grid,.grid.two,.grid.four{grid-template-columns:1fr 1fr}.source-list{columns:1}.layer{grid-template-columns:1fr}.layer>strong{padding:9px}.risk-matrix{grid-template-columns:70px 1fr}}
+    @media(max-width:640px){header{padding-top:38px}.grid,.grid.two,.grid.four{grid-template-columns:1fr}.risk-matrix{grid-template-columns:1fr}.risk-matrix .head:nth-child(2),.risk-matrix .head:nth-child(3){display:none}.flow{grid-template-columns:repeat(6,220px)}h2{font-size:23px}}
+    @media print{nav{display:none}body{background:white}.card,.step,.diagram,.scroll{break-inside:avoid}section{break-inside:auto}}
+  </style>
+</head>
+<body>
+  <header>
+    <small>AI PRODUCT REVERSE ANALYSIS · 2026-08-18</small>
+    <h1>通义听悟</h1>
+    <p class="lead">把“必须从头听完的音视频”重构成可搜索、可定位、可复用的结构化知识对象；消费端负责低门槛记录与阅读，企业端通过 API 将转写、翻译和大模型提炼嵌入业务系统。</p>
+    <div class="meta"><span class="chip">Web 端</span><span class="chip">公开页面 + 登录后只读导航</span><span class="chip">官方文档</span><span class="chip">风险：中高（会议与个人数据）</span><span class="chip">不触发上传 / 录音 / 分享 / 付费</span></div>
+  </header>
+  <nav>
+    <a href="#summary">结论</a><a href="#evidence">证据</a><a href="#value">用户与价值</a><a href="#journey">用户旅程</a><a href="#capability">AI 能力</a><a href="#agent">Agent / 工作流</a><a href="#context">上下文与数据</a><a href="#architecture">架构</a><a href="#business">商业化</a><a href="#governance">评测与风险</a><a href="#tobe">As-Is / To-Be</a><a href="#trace">证据追溯</a>
+  </nav>
+  <main>
+    <section id="summary">
+      <h2>01｜执行摘要</h2>
+      <div class="verdict"><strong>核心判断：</strong>通义听悟不是一个“会聊天的会议机器人”，而是一条以 <b>Record（记录）</b> 为中心的音视频信息加工流水线：采集/导入 → ASR 转写 → 发言人和时间轴对齐 → 大模型结构化提炼 → 搜索、回听、导出与分享。当前证据不足以确认多 Agent、RAG、长期记忆或 Web 端动态模型路由。</div>
+      <div class="grid four" style="margin-top:13px">
+        <div class="card accent"><div class="eyebrow">核心任务</div><p class="metric">听 → 读</p><p>把线性音视频转成可扫读、可定位的文本与摘要。 <span class="tag fact">E01 E06</span></p></div>
+        <div class="card accent"><div class="eyebrow">首次价值时刻</div><p class="metric">首屏可读</p><p>用户第一次看到带时间戳的转写及概要/章节，而不是等完整听完。 <span class="tag infer">E06</span></p></div>
+        <div class="card accent"><div class="eyebrow">产品形态</div><p class="metric">B2C + API</p><p>个人应用免费入口与企业接口并存；商业化重点可确认在 API 用量。 <span class="tag fact">E08 E12</span></p></div>
+        <div class="card accent"><div class="eyebrow">主要风险</div><p class="metric">可信 + 隐私</p><p>ASR 错误会向摘要传播，会议数据又天然可能敏感。 <span class="tag fact">E07 E15</span></p></div>
+      </div>
+      <h3>AI 在价值链中的角色</h3>
+      <div class="grid">
+        <div class="card"><span class="tag fact">【已确认】</span><h4>感知与结构化</h4><p>把实时音频、上传文件或 RSS 内容转为时间轴文本，区分发言人，并形成可检索记录。 <span class="tag fact">E01 E02 E06 E10</span></p></div>
+        <div class="card"><span class="tag fact">【已确认】</span><h4>生成与提炼</h4><p>产出全文摘要、章节、发言总结、问答回顾、待办、关键词等；企业接口还支持自定义 Prompt。 <span class="tag fact">E06 E10 E11</span></p></div>
+        <div class="card"><span class="tag unknown">【未知】</span><h4>判断与执行</h4><p>未看到系统替用户执行会议决策、自动发任务或自动写入外部业务系统；分享也未被本轮触发。</p></div>
+      </div>
+    </section>
+
+    <section id="evidence">
+      <h2>02｜证据范围与边界</h2>
+      <div class="grid">
+        <div class="card"><h4>本轮已查看</h4><ul><li>S01：登录后首页导航和三类入口</li><li>S02：播客 RSS 配置弹窗</li><li>S03：上传音视频入口弹窗</li><li>S04：我的记录页顶部控件</li><li>S05：公开“发现”播客页</li><li>S06：公开播客记录详情</li><li>O01–O07：阿里云官方产品、API、价格、更新与服务协议</li></ul></div>
+        <div class="card"><h4>主动未执行</h4><ul><li>未开启麦克风或实时记录</li><li>未上传任何本地/云盘文件</li><li>未提交 RSS 链接或触发转写</li><li>未分享、导出、收藏、删除或购买</li><li>未打开用户私人记录详情</li></ul><p class="muted">因此对实际耗时、失败恢复、导出格式、权限确认和付费拦截保持未知。</p></div>
+        <div class="card"><h4>产品路由</h4><p><span class="tag fact">AI 通用核心</span></p><p><span class="tag fact">助手 / Copilot</span> 信息整理与建议，不自动执行。</p><p><span class="tag fact">企业 AI / SaaS</span> API、AppKey、用量与接口计费。</p><p><span class="tag fact">多模态</span> 音视频、PPT 提取与文本生成。</p><p><span class="tag unknown">搜索 / RAG</span> 有记录搜索，但未确认 RAG 或跨记录问答。</p></div>
+      </div>
+      <div class="callout" style="margin-top:13px"><b>隐私处理：</b>浏览器页面可见账号中的记录列表，但本报告不引用标题、摘要、时长、数量之外的任何私人内容；所有结果页分析均来自公开“发现”内容。</div>
+    </section>
+
+    <section id="value">
+      <h2>03｜用户、场景、价值与替代方案</h2>
+      <div class="scroll">
+        <table>
+          <thead><tr><th>用户 / 场景</th><th>原始痛点</th><th>通义听悟提供的价值</th><th>失败代价</th><th>证据</th></tr></thead>
+          <tbody>
+            <tr><td>会议参与者、项目负责人</td><td>记录分散；会后难回看、难找决策与待办</td><td>实时字幕、完整转写、章节/摘要和待办提炼</td><td>错记责任人、时间或结论，影响执行</td><td><span class="tag fact">E01 E09 E10</span></td></tr>
+            <tr><td>访谈、面试、销售、客服</td><td>交流密度高，手记打断沟通；复盘成本高</td><td>说话人分离、问答/需求提取、服务质检能力</td><td>错误归因或漏掉敏感承诺</td><td><span class="tag fact">E08 E10 E14</span></td></tr>
+            <tr><td>学生、教师、研究者</td><td>长课程与外语资料难定位，复习依赖从头播放</td><td>转写、翻译、主题分段、摘要与时间定位</td><td>摘要遗漏或术语识别错误影响理解</td><td><span class="tag fact">E08 E09</span></td></tr>
+            <tr><td>播客听众、媒体从业者</td><td>播客消费时间长，缺少文本检索和内容预览</td><td>RSS 解析、发现/订阅、章节速览、全文阅读</td><td>平台链接限制、版权和摘要准确性</td><td><span class="tag fact">E02 E05 E06</span></td></tr>
+            <tr><td>企业开发者与业务系统</td><td>OA/IM/CRM 中缺少统一语音理解组件</td><td>API 化的实时/离线转写、翻译、大模型提炼与回调</td><td>数据合规、成本叠加、接口失败与状态不一致</td><td><span class="tag fact">E08 E10 E12</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <h3>一句话价值主张</h3>
+      <p class="verdict">让用户不必完整重听，就能从音视频中快速获得“原文证据 + 时间定位 + 结构化结论”；让企业不必自建完整语音与大模型链路，就能把同一能力嵌入业务流程。</p>
+      <h3>替代方案</h3>
+      <div class="grid four">
+        <div class="card"><b>手工笔记</b><p>低成本、强主观筛选，但遗漏多且不可全文回溯。</p></div>
+        <div class="card"><b>播放器 + 字幕</b><p>能回看但缺少结构化摘要、任务和跨记录管理。</p></div>
+        <div class="card"><b>通用 ASR</b><p>解决“转文字”，但不一定覆盖摘要、章节、发现与业务提取。</p></div>
+        <div class="card"><b>会议协作套件</b><p>与日历/IM/任务更紧，但在开放音视频与播客消费上未必同构。</p></div>
+      </div>
+    </section>
+
+    <section id="journey">
+      <h2>04｜端到端用户旅程</h2>
+      <div class="flow">
+        <div class="step"><span class="n">01</span><b>进入与选择</b><p>首页选择实时记录、上传音视频或播客 RSS。</p><span class="tag fact">E01</span></div>
+        <div class="step"><span class="n">02</span><b>配置输入</b><p>设置语种、翻译、发言人数；上传可选本地或阿里云盘。</p><span class="tag fact">E02 E03</span></div>
+        <div class="step"><span class="n">03</span><b>采集 / 导入</b><p>实时音频推流、文件上传或 RSS 解析。</p><span class="tag fact">E02 E10</span></div>
+        <div class="step"><span class="n">04</span><b>识别与处理</b><p>ASR、说话人分离、翻译，结束后进入 AI 纪要提取。</p><span class="tag fact">E10</span></div>
+        <div class="step"><span class="n">05</span><b>验证与消费</b><p>播放、看全文、按时间定位，浏览概要、章节和发言人。</p><span class="tag fact">E06 E07</span></div>
+        <div class="step"><span class="n">06</span><b>管理与复用</b><p>搜索、收藏、分享、回收站；公开播客可发现与订阅。</p><span class="tag fact">E01 E04 E05</span></div>
+      </div>
+      <h3>六流泳道</h3>
+      <div class="lane">
+        <b>流 / 阶段</b><b>输入</b><b>理解</b><b>处理</b><b>验证 / 交付</b>
+        <strong>用户</strong><div>选择实时/文件/RSS；配置语言、翻译、人数</div><div>等待系统形成可读记录</div><div>查看摘要、章节、发言和原文</div><div>回听、纠错、搜索、导出/分享 <span class="tag unknown">纠错未知</span></div>
+        <strong>界面</strong><div>首页入口、上传弹窗、RSS 表单</div><div>任务状态与进度 <span class="tag unknown">S 未覆盖</span></div><div>播放器、全文概要、章节、发言总结、问答回顾</div><div>我的记录、收藏、分享、回收站、发现</div>
+        <strong>控制 / 工作流</strong><div>创建 Record / Task <span class="tag infer">推断</span></div><div>转写任务 → 结束 → AI 后处理 <span class="tag fact">API</span></div><div>组装 Record 详情与派生产物 <span class="tag infer">推断</span></div><div>索引与权限检查 <span class="tag infer">推断</span></div>
+        <strong>工具 / 模型</strong><div>麦克风、文件、云盘、RSS</div><div>ASR、说话人分离、翻译</div><div>千问/听悟模型能力：摘要、章节等</div><div>搜索、播放、导出与分享服务</div>
+        <strong>上下文 / 数据</strong><div>媒体源、语言、发言人数、用户权限</div><div>音频帧、转写句、时间戳、SpeakerID</div><div>Record、Transcript、AIArtifact、版本 <span class="tag unknown">版本未知</span></div><div>文件夹、收藏、分享、订阅、用量</div>
+        <strong>结果 / 评测</strong><div>配置完整才能开始；RSS 按合规规则限制</div><div>调用成功不等于内容正确</div><div>页面有准确性免责声明，但无逐结论置信度</div><div>用户目标是否达成仍需人核验</div>
+      </div>
+      <h3>关键分支与断点</h3>
+      <div class="grid">
+        <div class="card"><span class="tag fact">【已确认】</span><h4>输入合规拦截</h4><p>RSS 弹窗明确列出部分视频网站链接不能直接解析，并建议先下载后使用；未输入链接时“开始转写”不可用。 <span class="tag fact">E02</span></p></div>
+        <div class="card"><span class="tag unknown">【未知】</span><h4>处理中断与恢复</h4><p>Web 页面未实际触发任务，无法确认上传失败、断网、取消、重试、失败是否扣额度，以及恢复点。</p></div>
+        <div class="card"><span class="tag unknown">【未知】</span><h4>人工纠错闭环</h4><p>本轮公开结果页未看到逐字稿编辑、说话人纠正、摘要反馈及上游修改后的下游失效机制。</p></div>
+      </div>
+    </section>
+
+    <section id="capability">
+      <h2>05｜AI 能力契约</h2>
+      <div class="scroll">
+        <table>
+          <thead><tr><th>能力</th><th>用户问题</th><th>输入 / 上下文</th><th>输出</th><th>自主级别</th><th>验证与降级</th><th>证据</th></tr></thead>
+          <tbody>
+            <tr><td>实时语音转写</td><td>开会时如何不漏记</td><td>麦克风/音频流、采样率、语种</td><td>增量转写、时间信息；可翻译</td><td>1 信息展示</td><td>官方 API 说明尾点延迟约 300ms，但具体 Web 表现未测；噪音和断流策略未测</td><td><span class="tag fact">E01 E10 E14</span></td></tr>
+            <tr><td>离线音视频转写</td><td>如何快速读完长录音/视频</td><td>本地文件、阿里云盘文件、语种</td><td>全文、时间戳、说话人</td><td>1 信息展示</td><td>官方 FAQ 称一般 3 小时内完成；本轮未上传验证</td><td><span class="tag fact">E03 E06 E14</span></td></tr>
+            <tr><td>说话人分离 / 身份</td><td>是谁说了什么</td><td>音频、发言人数提示；API 可配 SpeakerCount</td><td>SpeakerID / 发言人分段</td><td>1 信息展示</td><td>多人重叠、错分和人工修正机制未知</td><td><span class="tag fact">E02 E06 E10 E13</span></td></tr>
+            <tr><td>翻译</td><td>如何理解跨语种会议和课程</td><td>源语言、目标语言、转写文本</td><td>实时或离线译文</td><td>3 生成草稿</td><td>模型与术语一致性需人工验证；API 按目标语种叠加计费</td><td><span class="tag fact">E02 E10 E12 E13</span></td></tr>
+            <tr><td>大模型摘要与章节</td><td>如何快速抓重点并定位</td><td>转写结果、发言人、时间戳</td><td>全文概要、章节、发言总结、问答回顾、思维导图等</td><td>3 生成草稿</td><td>页面明确不保证 AI 内容准确和完整；当前无逐句引用</td><td><span class="tag fact">E06 E07 E10</span></td></tr>
+            <tr><td>要点与业务提取</td><td>如何获得待办、关键词、客户需求</td><td>转写 + 业务维度</td><td>待办、重点、场景、质检、对话内容提取</td><td>3 生成草稿</td><td>角色识别错误会污染归责；需要人工确认后再进入业务系统</td><td><span class="tag fact">E10 E13</span></td></tr>
+            <tr><td>自定义 Prompt（API）</td><td>标准摘要不符合业务格式怎么办</td><td>Prompt + {Transcription}；可选模型</td><td>自定义结构或判定结果</td><td>3 生成草稿</td><td>输入超限可能截断；结果字段可报告 Truncated；多 Prompt 叠加计费</td><td><span class="tag fact">E11 E12</span></td></tr>
+            <tr><td>记录搜索与发现</td><td>如何找到过去内容或先预览播客</td><td>关键词、记录索引、公开订阅源</td><td>记录/节目与章节预览</td><td>1 信息展示</td><td>排序、召回、权限过滤和跨记录语义搜索机制未知</td><td><span class="tag fact">E04 E05</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="callout" style="margin-top:13px"><b>边界：</b>没有证据表明通义听悟会自动执行会议决策；所有摘要、待办、质检和业务提取都应被视为“可审阅草稿”，而不是已经发生的业务事实。</div>
+    </section>
+
+    <section id="agent">
+      <h2>06｜Agent、工作流、模型与工具</h2>
+      <div class="verdict"><span class="tag unknown">【未知】</span> 页面未展示“Agent 名称、计划、工具链或多 Agent 协作”。因此以下用“能力组件”而非虚构 Agent 命名；只确认可观察的流水线与官方 API 能力。</div>
+      <h3>可观察工作流</h3>
+      <div class="diagram">
+        <div class="diagram-row">
+          <div class="box">输入接入<br><small>麦克风 / 文件 / 云盘 / RSS</small><br><span class="tag fact">E01–E03</span></div><span class="arrow">→</span>
+          <div class="box inferred">任务控制<br><small>Create / 推流 / End / 查询状态</small><br><span class="tag fact">E10</span></div><span class="arrow">→</span>
+          <div class="box">语音处理<br><small>ASR / 说话人 / 翻译</small><br><span class="tag fact">E10</span></div><span class="arrow">→</span>
+          <div class="box">AI 后处理<br><small>摘要 / 章节 / 待办 / 自定义 Prompt</small><br><span class="tag fact">E10 E11</span></div><span class="arrow">→</span>
+          <div class="box inferred">结果组装<br><small>Record 详情 / 搜索索引 / 分享</small><br><span class="tag infer">E04–E06</span></div>
+        </div>
+      </div>
+      <h3>组件 I/O 契约</h3>
+      <div class="scroll">
+        <table>
+          <thead><tr><th>能力组件</th><th>触发 / 上游</th><th>核心输入</th><th>输出 / 下游</th><th>完成条件</th><th>异常与边界</th><th>等级</th></tr></thead>
+          <tbody>
+            <tr><td>接入与任务控制</td><td>用户开始记录、上传或提交 RSS</td><td>身份、媒体源、语言、参数、权限</td><td>Record/Task、推流地址或处理任务</td><td>任务创建且具备可追踪状态</td><td>Web 端任务状态与幂等键不可见</td><td><span class="tag infer">合理推断</span></td></tr>
+            <tr><td>语音识别组件</td><td>音频流或文件就绪</td><td>音频、格式、采样率、语种、热词</td><td>句子、时间戳、SpeakerID、识别状态</td><td>结束输入且生成可读转写</td><td>噪音、重叠说话、专有名词误识别</td><td><span class="tag fact">已确认</span></td></tr>
+            <tr><td>翻译组件</td><td>用户启用翻译</td><td>源语言/混合语种、目标语种、转写</td><td>译文与时间信息</td><td>目标语种结果返回</td><td>多目标语言成本叠加；术语一致性未知</td><td><span class="tag fact">已确认</span></td></tr>
+            <tr><td>AI 纪要组件</td><td>记录结束后进入后处理</td><td>转写、发言人、句子ID、能力开关</td><td>摘要、章节、发言总结、问答等</td><td>选定产物完成并可显示/回调</td><td>内容可能不准或不完整；长文本截断</td><td><span class="tag fact">已确认</span></td></tr>
+            <tr><td>记录检索与交付</td><td>结果生成或用户搜索/打开</td><td>记录、索引、用户权限、分享状态</td><td>列表、详情、播放定位、导出/分享</td><td>用户能回到原文完成核验</td><td>搜索算法、租户过滤、导出权限未知</td><td><span class="tag infer">合理推断</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <h3>模型与路由证据</h3>
+      <div class="grid two">
+        <div class="card"><span class="tag fact">【已确认】</span><h4>官方能力目录</h4><ul><li>产品概述明确依托千问语言模型与音视频 AI 模型。 <span class="tag fact">E08</span></li><li>自定义 Prompt 文档列出 tingwu-turbo、tingwu-plus、qwen-max。 <span class="tag fact">E11</span></li><li>2025 更新记录列出 qwen-plus、qwq、ccai-pro 可选，并出现 fun-asr 与 qwen-mt。 <span class="tag fact">E13</span></li></ul></div>
+        <div class="card"><span class="tag unknown">【未知 / 冲突保留】</span><h4>不能据此确认</h4><ul><li>当前 Web 消费端实际调用哪个模型。</li><li>不同文档中的模型列表是否对应不同 API 版本、能力或时间点。</li><li>是否按语种、长度、套餐、质量或成本动态路由。</li><li>是否有自动回退、A/B、Prompt 版本与模型版本可见性。</li></ul></div>
+      </div>
+    </section>
+
+    <section id="context">
+      <h2>07｜上下文、知识、数据实体与状态</h2>
+      <h3>上下文对象</h3>
+      <div class="scroll">
+        <table>
+          <thead><tr><th>对象</th><th>内容</th><th>生产者 → 消费者</th><th>作用域</th><th>权限 / 时效</th><th>证据与未知</th></tr></thead>
+          <tbody>
+            <tr><td>IdentityContext</td><td>用户身份、应用/项目、AppKey、套餐</td><td>认证 → Web/API/计费</td><td>用户/企业项目</td><td>API 需 AppKey；Web 角色和 RBAC 未见</td><td><span class="tag fact">E10</span> <span class="tag unknown">Web RBAC 未知</span></td></tr>
+            <tr><td>RequestContext</td><td>媒体源、语言、翻译、发言人数、能力开关</td><td>用户 → 任务控制</td><td>单次记录</td><td>RSS 受平台合规限制</td><td><span class="tag fact">E02 E03 E10</span></td></tr>
+            <tr><td>TaskContext</td><td>创建、推流、结束、处理、结果状态</td><td>控制服务 → UI/回调</td><td>Record/Task</td><td>API 可查询；Web 唯一事实源未知</td><td><span class="tag fact">E10</span></td></tr>
+            <tr><td>TranscriptContext</td><td>句子、时间戳、发言人、语种、译文</td><td>ASR/翻译 → 播放/摘要/搜索</td><td>单条记录</td><td>原文是派生产物的关键依据</td><td><span class="tag fact">E06 E10</span></td></tr>
+            <tr><td>AIArtifactContext</td><td>摘要、章节、问答、待办、思维导图、自定义结果</td><td>大模型 → 详情页/API 回调</td><td>记录 + 能力 + 模型/Prompt 版本</td><td>版本与失效规则不可见</td><td><span class="tag fact">E06 E10 E11</span></td></tr>
+            <tr><td>KnowledgeContext</td><td>本条转写内容；可能含用户业务规则</td><td>记录/Prompt → 大模型</td><td>任务私有</td><td>未确认外部知识检索或 RAG</td><td><span class="tag unknown">RAG 未知</span></td></tr>
+            <tr><td>BillingContext</td><td>音频时长、能力项、Prompt 数、目标语种、用量</td><td>调用 → 计费</td><td>账号/AppKey</td><td>各能力可能叠加；失败补偿细节未知</td><td><span class="tag fact">E12 E13</span></td></tr>
+            <tr><td>MemoryContext</td><td>跨记录长期偏好、用户事实</td><td>—</td><td>—</td><td>页面无长期记忆证据</td><td><span class="tag unknown">未知</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <h3>记录状态机</h3>
+      <div class="state"><span>草稿 / 配置</span><i>→</i><span>已创建</span><i>→</i><span>录制 / 上传 / 解析</span><i>→</i><span>转写中</span><i>→</i><span>AI 后处理中</span><i>→</i><span>可阅读</span><i>→</i><span>收藏 / 分享 / 回收站</span></div>
+      <p class="muted"><span class="tag fact">【已确认】</span> API 文档确认创建—推流—结束—查询—AI 纪要阶段；<span class="tag infer">【合理推断】</span> 状态机将这些接口阶段与 Web 导航对象统一表达；收藏、分享、回收站只确认入口存在，未执行状态变更。</p>
+      <h3>核心数据实体与关系</h3>
+      <div class="diagram">
+        <div class="diagram-row"><div class="box">User / Organization</div><span class="arrow">1:N</span><div class="box">Record / Task</div><span class="arrow">1:1</span><div class="box">MediaSource</div></div>
+        <div class="divider"></div>
+        <div class="diagram-row"><div class="box">Record</div><span class="arrow">1:N</span><div class="box">TranscriptSegment</div><span class="arrow">N:1</span><div class="box">Speaker</div></div>
+        <div class="divider"></div>
+        <div class="diagram-row"><div class="box">Record</div><span class="arrow">1:N</span><div class="box">AIArtifact<br><small>Summary / Chapter / ActionItem</small></div><span class="arrow">0:N</span><div class="box inferred">ArtifactVersion</div></div>
+        <div class="divider"></div>
+        <div class="diagram-row"><div class="box">Record</div><span class="arrow">0:N</span><div class="box">Share / Favorite / Folder</div><span class="arrow">0:N</span><div class="box">Audit / Usage / Billing</div></div>
+      </div>
+    </section>
+
+    <section id="architecture">
+      <h2>08｜产品分层架构（As-Is）</h2>
+      <div class="layer"><strong>1 用户与渠道</strong><div class="nodes"><span class="node">个人 Web</span><span class="node">钉钉小程序</span><span class="node">浏览器插件</span><span class="node">企业 API 客户</span><span class="node unknown-node">企业管理员 / 审计员</span></div></div>
+      <div class="layer"><strong>2 交互与体验</strong><div class="nodes"><span class="node">首页三入口</span><span class="node">搜索</span><span class="node">播放器 + 时间轴</span><span class="node">摘要 / 章节 / 发言</span><span class="node">收藏 / 分享 / 回收站</span><span class="node">发现 / 订阅</span></div></div>
+      <div class="layer"><strong>3 产品应用域</strong><div class="nodes"><span class="node">实时记录</span><span class="node">文件记录</span><span class="node">播客阅读</span><span class="node">记录管理</span><span class="node">企业开发接入</span><span class="node">销售客服分析</span></div></div>
+      <div class="layer"><strong>4 工作流编排</strong><div class="nodes"><span class="node inferred">记录任务控制</span><span class="node inferred">异步后处理</span><span class="node inferred">回调 / 事件通知</span><span class="node unknown-node">多 Agent</span><span class="node unknown-node">自动规划</span></div></div>
+      <div class="layer"><strong>5 工具与外部服务</strong><div class="nodes"><span class="node">麦克风推流</span><span class="node">本地文件</span><span class="node">阿里云盘</span><span class="node">RSS 解析</span><span class="node">OSS 转码（API）</span><span class="node">事件总线（API）</span></div></div>
+      <div class="layer"><strong>6 模型接入</strong><div class="nodes"><span class="node">ASR</span><span class="node">说话人分离</span><span class="node">翻译</span><span class="node">千问 / 听悟大模型能力</span><span class="node">PPT 多模态</span><span class="node unknown-node">Web 端路由策略</span></div></div>
+      <div class="layer"><strong>7 上下文与数据</strong><div class="nodes"><span class="node">Record / Task</span><span class="node">Transcript / Speaker / Timestamp</span><span class="node">AIArtifact</span><span class="node">Folder / Favorite / Share</span><span class="node">Usage / Billing</span><span class="node inferred">状态与回调日志</span></div></div>
+      <div class="layer"><strong>8 知识与资产</strong><div class="nodes"><span class="node">用户音视频</span><span class="node">转写文本</span><span class="node">摘要 / 章节 / 待办</span><span class="node">公开播客库</span><span class="node unknown-node">外部 RAG 知识</span><span class="node unknown-node">长期记忆</span></div></div>
+      <div class="layer"><strong>9 评测与治理</strong><div class="nodes"><span class="node">AI 准确性免责声明</span><span class="node">链接合规限制</span><span class="node">用户数据条款</span><span class="node inferred">敏感词 / 内容安全</span><span class="node unknown-node">逐结论置信与引用</span><span class="node unknown-node">可见 RBAC / 审计台</span></div></div>
+      <div class="layer"><strong>10 基础设施与运营</strong><div class="nodes"><span class="node">阿里云认证 / AppKey</span><span class="node">API 网关与 QPS</span><span class="node inferred">对象存储 / 队列</span><span class="node">按时长与能力计费</span><span class="node">用量统计 / AppKey 出账</span><span class="node unknown-node">区域 / 灾备 / SLA</span></div></div>
+      <p class="muted">线型说明：实线绿色为已确认；蓝色虚线为合理推断；灰紫虚线为未知。数据库、队列、向量库、语言与具体云资源未公开，因此不作事实断言。</p>
+    </section>
+
+    <section id="business">
+      <h2>09｜商业化、运营与增长循环</h2>
+      <div class="grid two">
+        <div class="card"><span class="tag fact">【已确认】</span><h4>个人端：免费入口 + 内容消费</h4><ul><li>官方文档称个人客户可通过网站、钉钉小程序和浏览器插件免费使用。 <span class="tag fact">E08</span></li><li>首页把“实时记录、上传、播客 RSS”作为三个激活入口。 <span class="tag fact">E01</span></li><li>发现/订阅把一次性工具扩展成持续内容消费入口。 <span class="tag fact">E05</span></li><li>个人端精确额度、会员层级和付费边界，本轮页面未确认。 <span class="tag unknown">未知</span></li></ul></div>
+        <div class="card"><span class="tag fact">【已确认】</span><h4>企业端：后付费 API</h4><ul><li>新版 ASR：实时或文件转写 0.6 元/小时。 <span class="tag fact">E12</span></li><li>多数大模型能力：每项 0.064 元/小时，多能力/多 Prompt 叠加。 <span class="tag fact">E12</span></li><li>质检/内容提取 0.13 元/小时；PPT 多模态 0.64；实时翻译 4；离线翻译 0.5。 <span class="tag fact">E12</span></li><li>免费试用 90 天；实时与文件额度、并发限制按官方当前计费页执行。 <span class="tag fact">E12</span></li></ul></div>
+      </div>
+      <div class="callout" style="margin-top:13px"><b>计费边界：</b>以上价格来自 2026-08-18 查看时的“新版接口计费说明”，不是对个人 Web 端收费的推断。官方页同时保留旧版接口价格；实际接入前需按接口版本复核。</div>
+      <h3>增长与留存循环</h3>
+      <div class="diagram">
+        <div class="diagram-row"><div class="box">低摩擦导入<br><small>实时 / 文件 / RSS</small></div><span class="arrow">→</span><div class="box">首个可读结果<br><small>转写 + 摘要</small></div><span class="arrow">→</span><div class="box">复用动作<br><small>搜索 / 回听 / 导出</small></div><span class="arrow">→</span><div class="box">内容资产沉淀<br><small>我的记录 / 订阅</small></div><span class="arrow">↺</span><div class="box inferred">习惯 / 企业嵌入</div></div>
+      </div>
+      <h3>建议指标（不是现状事实）</h3>
+      <div class="grid four">
+        <div class="card"><span class="tag suggest">【建议设计】</span><h4>激活</h4><p>首次完成记录率、首份摘要打开率、首个时间定位点击率。</p></div>
+        <div class="card"><span class="tag suggest">【建议设计】</span><h4>任务成功</h4><p>用户验证后可用的摘要率、待办采纳率、导出/分享后完成率。</p></div>
+        <div class="card"><span class="tag suggest">【建议设计】</span><h4>质量</h4><p>WER、说话人错分率、摘要忠实度、章节边界准确率、关键项召回。</p></div>
+        <div class="card"><span class="tag suggest">【建议设计】</span><h4>效率与成本</h4><p>首字延迟、转写完成时长、后处理时长、每成功记录成本、失败补偿率。</p></div>
+      </div>
+    </section>
+
+    <section id="governance">
+      <h2>10｜评测、信任、安全与隐私</h2>
+      <div class="risk-matrix">
+        <div class="head">等级</div><div class="head">已观察风险</div><div class="head">验证 / 治理要求</div>
+        <div class="p0"><b>P0</b></div><div>会议、面试、客服和课程可能含个人、商业或敏感信息；误分享或越权读取伤害高。服务协议确认用户拥有业务数据并可删除，但 Web 端组织隔离、RBAC、审计与保留策略未见。 <span class="tag fact">E15</span></div><div>默认私有；分享前显示对象、范围与有效期；企业提供 RBAC、审计、DLP、保留/删除、导出与租户隔离证明。 <span class="tag suggest">建议设计</span></div>
+        <div class="p0"><b>P0</b></div><div>AI 摘要、待办或质检可能把错误转写包装成确定结论。公开结果页只提供总体免责声明，未见逐结论证据或置信。 <span class="tag fact">E07</span></div><div>摘要句/待办必须一键回跳原文时间段；高风险项要求用户确认；标记低置信与冲突。 <span class="tag suggest">建议设计</span></div>
+        <div class="p1"><b>P1</b></div><div>说话人错分会导致责任人归错；自动任务提取进入业务系统时影响更大。</div><div>Speaker 纠正、批量合并/拆分、修改后使摘要与待办失效并重算；外部写入前确认。</div>
+        <div class="p1"><b>P1</b></div><div>自定义 Prompt 长文本可能截断；如果只看结果而不看 Truncated，用户会误以为覆盖全文。 <span class="tag fact">E11</span></div><div>把截断、覆盖区间、模型/Prompt 版本和输入字数展示为结果元数据。</div>
+        <div class="p1"><b>P1</b></div><div>多能力、多 Prompt、多目标翻译均可能叠加计费；重试/失败补偿规则未在本轮确认。 <span class="tag fact">E12</span></div><div>调用前估价、预算阈值、幂等计费、失败释放、账单到 Record/能力项的可追溯。</div>
+        <div class="p2"><b>P2</b></div><div>RSS 对部分平台有合规限制；公开发现内容涉及来源、授权与摘要二次传播边界。 <span class="tag fact">E02 E05</span></div><div>保留来源、节目/作者归属、下架与申诉机制；限制绕过平台规则的导入路径。</div>
+      </div>
+      <h3>三类“完成”必须拆开</h3>
+      <div class="grid">
+        <div class="card"><span class="tag fact">1 工具成功</span><p>音频已接入、ASR/模型调用返回，不代表内容正确。</p></div>
+        <div class="card"><span class="tag infer">2 业务状态完成</span><p>Record 可读、产物齐全、索引可查、账单一致，才算系统任务完成。</p></div>
+        <div class="card"><span class="tag suggest">3 用户目标达成</span><p>用户核对后能可靠写纪要、复习、跟进任务或完成业务复盘，才算最终成功。</p></div>
+      </div>
+      <h3>最小评测矩阵</h3>
+      <div class="scroll"><table><thead><tr><th>层</th><th>主要指标</th><th>Bad Case</th><th>完成门</th></tr></thead><tbody>
+        <tr><td>ASR</td><td>字错率、专名召回、时间戳偏差</td><td>噪声、中英混、方言、多人重叠、弱麦克风</td><td>低置信可见；关键专名可纠正</td></tr>
+        <tr><td>说话人</td><td>DER、身份识别准确率</td><td>音色接近、插话、同设备远场</td><td>用户可改；下游归责随版本重算</td></tr>
+        <tr><td>摘要 / 章节</td><td>忠实度、覆盖率、边界质量</td><td>否定词、讽刺、跨章节结论、前后修正</td><td>每条可回跳证据；冲突不静默合并</td></tr>
+        <tr><td>待办 / 业务提取</td><td>实体、责任人、时间、动作精确率</td><td>讨论不等于承诺、建议不等于决定</td><td>用户确认后才能外发或写入系统</td></tr>
+        <tr><td>权限 / 隐私</td><td>越权率、误分享率、删除完成率</td><td>跨租户、分享链接转发、回收站与备份不一致</td><td>权限测试、审计可追溯、删除 SLA</td></tr>
+      </tbody></table></div>
+    </section>
+
+    <section id="tobe">
+      <h2>11｜As-Is / To-Be 与机会优先级</h2>
+      <div class="grid two">
+        <div class="card"><span class="tag fact">【已确认 + 合理推断】</span><h4>As-Is</h4><ul><li>以 Record 为中心，统一承载媒体、转写、AI 产物和播放定位。</li><li>个人 Web 强调三种输入和结果消费；发现页承担公开播客内容入口。</li><li>企业 API 把 ASR、翻译、大模型能力拆成可组合开关和用量计费单元。</li><li>AI 内容有总体免责声明，但可信度主要依赖用户回看原文。</li><li>未观察到多 Agent、RAG、长期记忆和自动执行业务动作。</li></ul></div>
+        <div class="card"><span class="tag suggest">【建议设计】</span><h4>To-Be</h4><ul><li>建立 Transcript → AIArtifact 的证据图：每个摘要句、章节、待办绑定句子ID和时间区间。</li><li>引入版本与依赖失效：纠正原文/发言人后，受影响产物标记“需重算”。</li><li>建立统一任务事实源：采集、转写、AI 后处理、索引、账单分别可见，支持取消、恢复和补偿。</li><li>企业治理台：组织、RBAC、审计、保留、DLP、模型白名单、区域与成本预算。</li><li>把待办变成“需确认执行”的结构化草稿，再连接任务/日历/OA；支持撤销和幂等。</li></ul></div>
+      </div>
+      <h3>机会优先级</h3>
+      <div class="scroll"><table><thead><tr><th>优先级</th><th>机会</th><th>对应问题</th><th>产品收益</th><th>验证方式</th></tr></thead><tbody>
+        <tr><td><span class="tag risk">P0</span></td><td>逐结论证据回跳 + 低置信提示</td><td>总体免责声明无法帮助用户定位哪一句可能错</td><td>提升信任、降低误采纳</td><td>摘要纠错率、回跳后修改率、错误采纳率</td></tr>
+        <tr><td><span class="tag risk">P0</span></td><td>企业权限与数据生命周期可视化</td><td>会议数据敏感，Web 端治理能力未见</td><td>提升企业采购可解释性</td><td>权限穿透测试、删除 SLA、审计覆盖</td></tr>
+        <tr><td><span class="tag suggest">P1</span></td><td>原文纠错 → 派生结果失效/重算</td><td>错误会沿 ASR → 摘要 → 待办传播</td><td>形成可治理的内容供应链</td><td>依赖命中率、重算一致性、人工耗时</td></tr>
+        <tr><td><span class="tag suggest">P1</span></td><td>调用前成本预估与 Record 级账单</td><td>多个能力和 Prompt 叠加计费</td><td>降低意外成本、促进可控试用</td><td>超预算率、账单争议率、成本/成功记录</td></tr>
+        <tr><td><span class="tag suggest">P1</span></td><td>结构化待办确认后写入协作系统</td><td>当前价值停在“看懂”，未确认进入“执行闭环”</td><td>从内容工具升级为会议 Copilot</td><td>待办采纳率、执行完成率、误创建率</td></tr>
+        <tr><td><span class="tag unknown">验证项</span></td><td>跨记录语义检索 / 私有知识问答</td><td>当前只确认搜索入口，未确认 RAG</td><td>提升历史资产复用</td><td>先验证用户是否需要跨记录问答及权限模型</td></tr>
+      </tbody></table></div>
+      <h3>最值得继续验证的 10 个问题</h3>
+      <ol>
+        <li>用户能否直接编辑转写文本、时间戳与发言人？修改后摘要是否自动失效？</li>
+        <li>上传/实时记录的任务状态、取消、断点恢复和失败重试如何呈现？</li>
+        <li>失败、取消、无声音和重复重试如何扣额度或补偿？</li>
+        <li>个人 Web 端的免费额度、付费边界、导出格式与分享权限是什么？</li>
+        <li>“搜索”是关键词、语义检索还是跨记录问答？是否逐租户过滤？</li>
+        <li>分享链接是否有密码、到期、下载限制、撤销与访问审计？</li>
+        <li>是否提供企业组织、角色、数据保留、区域、DLP 与模型策略控制？</li>
+        <li>当前 Web 端实际使用哪些 ASR、翻译和大模型版本？可否查看版本元数据？</li>
+        <li>摘要/待办能否逐条追溯到原文句子ID？是否有用户反馈与申诉闭环？</li>
+        <li>播客发现内容的授权、下架、订阅同步和公开分享规则是什么？</li>
+      </ol>
+    </section>
+
+    <section id="trace">
+      <h2>12｜组件—证据追溯</h2>
+      <div class="scroll">
+        <table>
+          <thead><tr><th>ID</th><th>结论</th><th>等级</th><th>来源</th><th>缺口 / 冲突</th></tr></thead>
+          <tbody>
+            <tr><td>E01</td><td>首页提供实时记录、上传音视频、播客 RSS 三类入口；侧栏含记录、收藏、分享、发现、回收站。</td><td><span class="tag fact">已确认</span></td><td>S01，通义听悟 Web 首页，2026-08-18</td><td>未触发实时记录与权限申请。</td></tr>
+            <tr><td>E02</td><td>RSS 表单支持语种、翻译和发言人数配置；部分视频网站链接因服务条款不能直接解析。</td><td><span class="tag fact">已确认</span></td><td>S02，Web RSS 弹窗</td><td>未提交链接，解析成功/失败状态未知。</td></tr>
+            <tr><td>E03</td><td>上传入口支持本地音视频和阿里云盘授权导入。</td><td><span class="tag fact">已确认</span></td><td>S03，Web 上传弹窗</td><td>格式、大小、批量与授权范围未在弹窗首层显示。</td></tr>
+            <tr><td>E04</td><td>“我的记录”有新建和搜索入口。</td><td><span class="tag fact">已确认</span></td><td>S04，/folders/0</td><td>文件夹层级、筛选、批量操作和版本未知。</td></tr>
+            <tr><td>E05</td><td>发现页展示公开播客、章节时间点、频道分类和订阅入口。</td><td><span class="tag fact">已确认</span></td><td>S05，/discover</td><td>推荐/排序算法和授权关系未知。</td></tr>
+            <tr><td>E06</td><td>公开记录详情包含播放器、全文概要、章节速览、发言总结、问答回顾，以及带发言人和时间戳的全文。</td><td><span class="tag fact">已确认</span></td><td>S06，公开播客详情</td><td>编辑、反馈、导出流程未覆盖。</td></tr>
+            <tr><td>E07</td><td>公开结果页明确提示 AI 生成内容不保证准确性和完整性。</td><td><span class="tag fact">已确认</span></td><td>S06，公开播客详情</td><td>未见逐结论置信或引用校验。</td></tr>
+            <tr><td>E08</td><td>官方定位为依托千问与音视频 AI 的工作学习助手，覆盖办公、教育、媒资、金融媒体、销售客服；个人端免费入口与企业 API 并存。</td><td><span class="tag fact">已确认</span></td><td>O01：<a href="https://help.aliyun.com/zh/tingwu/what-is-tingwu">什么是通义听悟</a></td><td>个人免费额度/会员策略未在该页说明。</td></tr>
+            <tr><td>E09</td><td>官方场景包含实时会议、录音转写、课程、外语资料、访谈、路演、待办与内容检索。</td><td><span class="tag fact">已确认</span></td><td>O02：<a href="https://help.aliyun.com/zh/tingwu/scenarios">应用场景</a></td><td>场景描述是官方承诺，不等同于本轮逐项实测。</td></tr>
+            <tr><td>E10</td><td>API 流程是创建任务、推流、结束、查询；结束后进入 AI 纪要阶段。能力含 ASR、说话人、翻译、摘要、章节、待办、质检、PPT、自定义 Prompt。</td><td><span class="tag fact">已确认</span></td><td>O03：<a href="https://help.aliyun.com/zh/tingwu/interface-and-implementation">实时记录接口与实现</a></td><td>Web 内部是否复用完全相同链路未知。</td></tr>
+            <tr><td>E11</td><td>自定义 Prompt 以转写内容为输入，单次最多 3 个；可选模型文档列出 tingwu-turbo、tingwu-plus、qwen-max；超限可能截断。</td><td><span class="tag fact">已确认</span></td><td>O04：<a href="https://help.aliyun.com/zh/tingwu/custom-prompt">自定义 Prompt</a></td><td>与 2025 更新中的可选模型列表存在时间/版本差异。</td></tr>
+            <tr><td>E12</td><td>新版接口按 ASR、各大模型能力、多模态和翻译分别按小时计费，多能力与多 Prompt 叠加。</td><td><span class="tag fact">已确认</span></td><td>O05：<a href="https://help.aliyun.com/zh/tingwu/pricing-and-billing-rules">计费说明</a>，查看于 2026-08-18</td><td>不得映射成个人 Web 端价格；旧版接口另有价格。</td></tr>
+            <tr><td>E13</td><td>2025 更新记录包括模型可选、复杂待办/问答优化、章节参数、身份识别、事件总线、fun-asr 与 qwen-mt 等。</td><td><span class="tag fact">已确认</span></td><td>O06：<a href="https://help.aliyun.com/zh/tingwu/release-notes">功能发布记录</a></td><td>只确认 API 能力发布，不确认当前 Web 默认启用。</td></tr>
+            <tr><td>E14</td><td>官方性能 FAQ 给出一般 3 小时内完成文件转写、实时尾点延迟约 300ms，并在限定测试条件下公布识别准确率。</td><td><span class="tag fact">已确认</span></td><td>O07：<a href="https://help.aliyun.com/zh/tingwu/faq-about-tingwu-performance">性能 FAQ</a></td><td>测试条件有限，不能泛化到所有真实会议。</td></tr>
+            <tr><td>E15</td><td>服务协议称用户拥有业务数据；服务按指令处理，用户可删除；服务结束/欠费后按约定缓冲期处理数据。</td><td><span class="tag fact">已确认</span></td><td>O08：<a href="https://help.aliyun.com/zh/tingwu/terms-of-service">产品服务协议</a></td><td>具体缓冲期、备份删除、区域与企业控制台能力需另查专门政策。</td></tr>
+            <tr><td>E16</td><td>Record 是串联媒体、转写、派生 AI 产物、搜索与分享的核心业务对象。</td><td><span class="tag infer">合理推断</span></td><td>E01、E04、E06、E10</td><td>内部实体名、数据库与版本结构不可见。</td></tr>
+            <tr><td>E17</td><td>产品更像顺序/异步能力流水线，而非页面可见的多 Agent 系统。</td><td><span class="tag infer">合理推断</span></td><td>E06、E10；无 Agent 页面信号</td><td>后端是否存在 Agent 编排未知。</td></tr>
+            <tr><td>E18</td><td>未确认 RAG、长期记忆、跨记录问答和动态模型路由。</td><td><span class="tag unknown">未知</span></td><td>本轮全部页面与官方资料</td><td>需要账户功能、API 细节或产品团队访谈。</td></tr>
+            <tr><td>E19</td><td>应建立摘要/待办到原文句子ID和时间段的证据图。</td><td><span class="tag suggest">建议设计</span></td><td>对应 E07 的总体免责声明和 E11 的句子ID能力</td><td>需验证交互复杂度和用户核验意愿。</td></tr>
+            <tr><td>E20</td><td>应把“调用成功、业务记录完成、用户目标达成”拆为三层完成门。</td><td><span class="tag suggest">建议设计</span></td><td>对应 E10 的多阶段异步流程与 E07 的准确性边界</td><td>需要统一状态、评测与用户确认数据。</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <h3>官方来源</h3>
+      <ul class="source-list">
+        <li><a href="https://tingwu.aliyun.com/home">通义听悟 Web 首页</a>（页面取证，2026-08-18）</li>
+        <li><a href="https://help.aliyun.com/zh/tingwu/what-is-tingwu">什么是通义听悟</a></li>
+        <li><a href="https://help.aliyun.com/zh/tingwu/scenarios">应用场景</a></li>
+        <li><a href="https://help.aliyun.com/zh/tingwu/interface-and-implementation">实时记录接口与实现</a></li>
+        <li><a href="https://help.aliyun.com/zh/tingwu/custom-prompt">自定义 Prompt</a></li>
+        <li><a href="https://help.aliyun.com/zh/tingwu/pricing-and-billing-rules">计费说明</a></li>
+        <li><a href="https://help.aliyun.com/zh/tingwu/release-notes">功能发布记录</a></li>
+        <li><a href="https://help.aliyun.com/zh/tingwu/faq-about-tingwu-performance">性能 FAQ</a></li>
+        <li><a href="https://help.aliyun.com/zh/tingwu/terms-of-service">产品服务协议</a></li>
+      </ul>
+    </section>
+  </main>
+  <footer>
+    <p>本报告是基于可见页面与官方资料的功能等价产品分析，不代表阿里云官方架构说明，也未读取隐藏思维链、内部代码、数据库、模型配置或私有接口。</p>
+    <p>证据等级：<span class="tag fact">【已确认】</span> 页面/官方资料直接支持；<span class="tag infer">【合理推断】</span> 多条事实形成因果链；<span class="tag suggest">【建议设计】</span> 针对问题的改进方案；<span class="tag unknown">【未知】</span> 当前证据不足。</p>
+  </footer>
+</body>
+</html>
