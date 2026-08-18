@@ -8,7 +8,7 @@ import re
 from pathlib import Path
 
 
-DEFAULT_SECTIONS = ["证据", "用户旅程", "Agent", "工具", "全局上下文"]
+DEFAULT_SECTIONS = ["证据", "用户旅程", "AI", "Agent", "模型", "上下文", "风险"]
 REQUIRED_LABEL_GROUPS = [
     ("【已确认】", "已确认"),
     ("【合理推断】", "合理推断"),
