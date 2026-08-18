@@ -32,6 +32,7 @@
     .flow{display:grid;grid-template-columns:repeat(6,minmax(130px,1fr));gap:9px;overflow:auto;padding:2px}.step{position:relative;background:var(--paper);border:1px solid var(--line);padding:14px;min-height:118px}.step:not(:last-child):after{content:"→";position:absolute;right:-9px;top:46%;z-index:2;background:var(--bg);color:var(--brand);font-weight:900}.step b{display:block;margin-bottom:5px}.step .n{color:var(--brand);font:800 12px ui-monospace,monospace}
     .lane{display:grid;grid-template-columns:135px repeat(4,minmax(185px,1fr));overflow:auto;background:white;border:1px solid var(--line)}.lane>*{padding:10px;border-right:1px solid var(--line);border-bottom:1px solid var(--line);min-width:150px}.lane b{background:var(--deep);color:white}.lane strong{background:#e8ece7}
     .layer{display:grid;grid-template-columns:185px 1fr;background:white;border:1px solid var(--line);margin:8px 0}.layer>strong{background:var(--deep);color:white;padding:14px}.nodes{display:flex;gap:8px;flex-wrap:wrap;padding:12px}.node{border:1px solid var(--fact);background:#fbfffd;padding:7px 9px;border-radius:3px}.node.inferred{border-style:dashed;border-color:var(--infer);background:#f7faff}.node.suggested{border:2px dotted var(--suggest);background:#fffaf4}.node.unknown-node{border-style:dashed;border-color:var(--unknown);background:#faf8fb}
+    .architecture-figure{margin:14px 0 0;background:white;border:1px solid var(--line);padding:10px}.architecture-figure a{display:block}.architecture-figure img{display:block;width:100%;height:auto}.architecture-figure figcaption{padding:9px 4px 2px;color:var(--muted);font-size:12px}
     .diagram{background:#fff;border:1px solid var(--line);padding:18px}.diagram-row{display:flex;align-items:stretch;justify-content:center;gap:9px;flex-wrap:wrap}.box{min-width:145px;max-width:210px;flex:1;padding:12px;border:1px solid #4b6f5b;background:#f8fcf9;text-align:center}.box.inferred{border-style:dashed;border-color:var(--infer);background:#f6f9ff}.arrow{align-self:center;font-size:22px;color:var(--brand);font-weight:900}.divider{height:1px;background:var(--line);margin:16px 0}
     .state{display:flex;gap:7px;align-items:center;overflow:auto;padding:4px 0 10px}.state span{min-width:120px;padding:9px;border:1px solid var(--line);background:white;text-align:center}.state i{font-style:normal;color:var(--brand);font-weight:900}
     .risk-matrix{display:grid;grid-template-columns:90px 1fr 1fr;gap:1px;background:var(--line);border:1px solid var(--line)}.risk-matrix>*{background:var(--paper);padding:12px}.risk-matrix .head{background:var(--deep);color:white;font-weight:700}.p0{border-left:5px solid #a62921}.p1{border-left:5px solid #d27a2d}.p2{border-left:5px solid #b6a045}
@@ -233,6 +234,11 @@
       <div class="layer"><strong>9 评测与治理</strong><div class="nodes"><span class="node">AI 准确性免责声明</span><span class="node">链接合规限制</span><span class="node">用户数据条款</span><span class="node inferred">敏感词 / 内容安全</span><span class="node unknown-node">逐结论置信与引用</span><span class="node unknown-node">可见 RBAC / 审计台</span></div></div>
       <div class="layer"><strong>10 基础设施与运营</strong><div class="nodes"><span class="node">阿里云认证 / AppKey</span><span class="node">API 网关与 QPS</span><span class="node inferred">对象存储 / 队列</span><span class="node">按时长与能力计费</span><span class="node">用量统计 / AppKey 出账</span><span class="node unknown-node">区域 / 灾备 / SLA</span></div></div>
       <p class="muted">线型说明：实线绿色为已确认；蓝色虚线为合理推断；灰紫虚线为未知。数据库、队列、向量库、语言与具体云资源未公开，因此不作事实断言。</p>
+      <h3>展开解释版：中英术语对照与组件职责</h3>
+      <figure class="architecture-figure">
+        <a href="通义听悟产品分层架构图-v2.png" target="_blank" rel="noopener"><img src="通义听悟产品分层架构图-v2.png" alt="通义听悟产品分层架构图展开解释版，包含十层架构、中英术语对照、组件职责与证据等级"></a>
+        <figcaption>点击图片可打开高清原图。新版保留上述十层结构，并为 ASR、Record、Task、AIArtifact、QPS、RBAC、RAG 等术语补充中文含义和白话职责；“已确认 / 合理推断 / 未知”仍按相同证据边界标注。</figcaption>
+      </figure>
     </section>
 
     <section id="business">
